@@ -5,6 +5,9 @@ mod auth;
 mod changes;
 mod draft;
 mod error;
+/// Shared vocabulary for the generic mailbox protocols (JMAP and IMAP).
+#[cfg(feature = "generic-mailbox")]
+pub mod generic;
 mod mailbox;
 mod mailbox_settings;
 mod operation;
