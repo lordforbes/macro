@@ -10,6 +10,8 @@ pub mod email_api;
 pub mod mailbox_drafts;
 /// Verified mailbox setup storage and authentication adapters.
 pub mod mailbox_init;
+/// Generic (JMAP and IMAP) mailbox credentials in the authentication service.
+pub mod generic_credentials;
 /// Durable email projections to search, notifications, contacts and storage.
 pub mod mailbox_projection;
 /// Persistence and provider adapters for scheduled-delivery claims.

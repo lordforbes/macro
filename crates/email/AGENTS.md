@@ -41,6 +41,9 @@ tools — hexagonal, heavily feature-gated.
 - `src/domain/mailbox/gmail_push.rs` (feature `mailbox`): key-cache fallback,
   push-token rotation retry and notification intake; lifecycle also owns ordered
   deletion requests for a deleted user's inboxes.
+- `src/domain/mailbox/generic_connection.rs` (feature `mailbox`): connecting a
+  JMAP or IMAP mailbox: an inactive link row, then its credentials in the
+  authentication service; a failed store deletes the link.
 - `src/domain/mailbox/connection.rs` (feature `mailbox`): inbox connection,
   completed/discovered Google grants, shared promotion, and failed-attempt cleanup.
   Reuses mailbox initialization and backfill-job services.

@@ -10,6 +10,10 @@ name = "email_service"
 path = "src/main.rs"
 
 [[bin]]
+name = "connect_generic_mailbox"
+path = "src/bin/connect_generic_mailbox/connect_generic_mailbox.rs"
+
+[[bin]]
 name = "backfill_contacts"
 path = "src/bin/backfill_contacts/backfill_contacts.rs"
 
@@ -100,6 +104,8 @@ agent_correlation = { path = "../../crates/agent_correlation", features = ["http
 calendar_events = { path = "../../crates/calendar_events", features = ["google", "inbound", "postgres", "schema"] }
 anyhow = { workspace = true }
 authentication_service_client = { path = "../../crates/authentication_service_client" }
+clap = { workspace = true }
+generic_mailbox_credentials = { path = "../../crates/generic_mailbox_credentials" }
 macro_aws_config = { path = "../../crates/macro_aws_config", features = ["s3", "sqs"] }
 aws-sdk-s3 = { workspace = true }
 aws-sdk-secretsmanager = { workspace = true }
@@ -202,6 +208,7 @@ uuid = { workspace = true }
 
 macro_service_urls = { path = "../../crates/macro_service_urls" }
 workspace-hack = { version = "0.1", path = "../../crates/workspace-hack" }
+zeroize = { workspace = true }
 
 [dev-dependencies]
 opentelemetry = { workspace = true, features = ["trace"] }

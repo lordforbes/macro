@@ -83,7 +83,9 @@ the gateway `/email` prefix.
   contacts, drafts, commands, settings, watches) and `run_health`, the
   per-minute Outlook health snapshot.
 - `src/bin/`: standalone binaries — `pubsub_workers` (the queue consumer
-  process), plus one-off backfill/cleanup scripts.
+  process), plus one-off backfill/cleanup scripts, and
+  `connect_generic_mailbox`, the operator tool that connects a JMAP or IMAP
+  mailbox (inactive) until the add-account form exists.
 
 ## Scope
 

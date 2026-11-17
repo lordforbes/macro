@@ -122,17 +122,17 @@ For read-only phases a generic mailbox reports every write capability false. The
 
 ## 7. Link model and credential store
 
-One new table, empty at creation:
+Built in Phase 1 (17 November 2026).
 
-`email_generic_mailbox_bindings(link_id uuid primary key references email_links on delete cascade, protocol, endpoint (JMAP session URL origin), host, port, tls_mode, username, secret_ciphertext bytea, kms_key_id, encryption_version smallint, created_at, updated_at)` with checks that the right columns are set per protocol and that the ciphertext is not empty.
+- **Table.** `email_generic_mailbox_bindings` (new, empty at creation): `link_id` primary key referencing `email_links` with `ON DELETE CASCADE`, `protocol`, `endpoint` (JMAP origin) or `host`/`port`/`tls_mode` (IMAP, `implicit` or `starttls`), `username`, and an AES-256-GCM envelope (`secret_ciphertext`, `encrypted_data_key`, `nonce`, `encryption_version`, `kms_key_id`). Checks enforce one column set per protocol.
+- **Encryption.** The envelope scheme of Microsoft refresh tokens, under the same KMS key (`MICROSOFT_TOKEN_KMS_KEY_ID`). The authentication service already holds `kms:GenerateDataKey` and `kms:Decrypt` on it, so no new key, IAM or Doppler entry is needed. The encryption context and the associated data name the purpose (`generic-mailbox-secret`) and the link id, so a refresh token cannot be read as a mailbox secret and a row copied to another link does not decrypt. Generic mailboxes are therefore available wherever Outlook is configured.
+- **Who decrypts.** The authentication service, through `PUT` and `GET /internal/generic_mailbox_credentials/{link_id}` (internal key only; the read answers `Cache-Control: no-store`). The store only writes for a link whose provider matches the protocol. The email service asks per sign-in (Phase 2) and drops the secret after.
+- **Code.** `crates/generic_mailbox_credentials` (connection types, the redacting and zeroising `MailboxSecret`, the cipher, the row); `authentication_service` `domain/generic_mailbox.rs` and its internal routes; `authentication_service_client` methods.
+- **Creating a link.** `email::domain::mailbox::generic_connection` creates an `email_links` row (provider `JMAP` or `IMAP`, `grant_id` null, **`is_sync_active = false`**) and stores the credentials; if storing fails, it deletes the link. Inactive keeps every sync worker away, including Gmail paths that select links without a provider filter; Phase 2 activates links once the adapter and that audit are done. Uniqueness is the existing `(fusionauth_user_id, email_address, provider)` constraint. The operator CLI `email_service`'s `connect_generic_mailbox` drives it until the add-account form exists; it takes the owner's FusionAuth id as an argument and reads the secret from stdin. It skips the inbox-count entitlement, which the form will apply.
 
-Encryption follows the existing precedent in `crates/cursor_api_key/src/cipher.rs`: direct `kms:Encrypt` (the secret is far below KMS's 4 KB limit), an encryption context naming the purpose and the link id so a row copied to another link fails to decrypt, a redacting, zeroising secret type. The self-hosted stack already runs LocalStack, which provides KMS.
+Logging: `Debug` for every connection type prints the protocol only. Endpoint, host and username are treated as addresses and never logged.
 
-Open question for review: who decrypts. The Outlook rule is that the authentication service owns refresh tokens and workers only receive short-lived access tokens. A static API key or IMAP password has no short-lived form, so either (a) the authentication service stores and returns it per request through the existing internal client, or (b) the email service decrypts it itself. (a) matches the existing ownership rule and keeps the "no plaintext secret storage" tests in one place; it is the recommendation.
-
-`email_links` gets a row with the new provider, `grant_id` null, and no custodian or Microsoft scope rows. Identity for de-duplication is `(protocol, endpoint or host, username)`. Links are created through an internal API or CLI first; no UI.
-
-Logging: `Debug` for the binding prints link id, protocol and flags only. Endpoint, host and username are treated as addresses and not logged.
+Deleting the row, or its link, does not revoke the secret at the mail server; any disconnect surface must say so.
 
 ## 8. Shared modules
 

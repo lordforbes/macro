@@ -1,0 +1,33 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO email_generic_mailbox_bindings (\n            link_id, protocol, endpoint, host, port, tls_mode, username,\n            secret_ciphertext, encrypted_data_key, nonce, encryption_version, kms_key_id\n        )\n        SELECT l.id, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12\n        FROM email_links l\n        WHERE l.id = $1 AND l.provider::text = upper($2)\n        ON CONFLICT (link_id) DO UPDATE SET\n            protocol = EXCLUDED.protocol,\n            endpoint = EXCLUDED.endpoint,\n            host = EXCLUDED.host,\n            port = EXCLUDED.port,\n            tls_mode = EXCLUDED.tls_mode,\n            username = EXCLUDED.username,\n            secret_ciphertext = EXCLUDED.secret_ciphertext,\n            encrypted_data_key = EXCLUDED.encrypted_data_key,\n            nonce = EXCLUDED.nonce,\n            encryption_version = EXCLUDED.encryption_version,\n            kms_key_id = EXCLUDED.kms_key_id,\n            updated_at = now()\n        RETURNING link_id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "link_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Int4",
+        "Text",
+        "Text",
+        "Bytea",
+        "Bytea",
+        "Bytea",
+        "Int2",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "8fe6f691129e1a4028b04a39801a8e8d781b1044c2d5617a9993223b85a38fa4"
+}

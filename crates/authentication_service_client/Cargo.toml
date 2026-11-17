@@ -7,6 +7,7 @@ version = "0.1.0"
 [dependencies]
 anyhow = { workspace = true }
 chrono = { workspace = true }
+generic_mailbox_credentials = { path = "../generic_mailbox_credentials" }
 model = { path = "../model" }
 reqwest = { workspace = true }
 serde = { workspace = true }

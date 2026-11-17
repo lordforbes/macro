@@ -136,6 +136,9 @@ async fn run_server() -> anyhow::Result<()> {
     let microsoft_credentials = config
         .microsoft_credentials()
         .context("invalid Microsoft OAuth configuration")?;
+    let generic_mailbox_kms_key_id = microsoft_credentials
+        .as_ref()
+        .map(|credentials| credentials.token_kms_key_id.clone());
     let microsoft_token_cipher = microsoft_credentials.as_ref().map(|credentials| {
         Arc::new(EnvelopeMicrosoftTokenCipher::new(KmsDataKeyProvider::new(
             aws_sdk_kms::Client::new(&aws_config),
@@ -262,6 +265,23 @@ async fn run_server() -> anyhow::Result<()> {
         })
         .transpose()
         .map_err(|error| anyhow!("invalid feature flag configuration: {error}"))?;
+    // Generic mailbox secrets are sealed under the Microsoft token key: the
+    // same kind of credential, in the same service, under the same IAM grant
+    // (kms:GenerateDataKey and kms:Decrypt). The encryption context's purpose
+    // keeps the two apart.
+    let generic_mailboxes = generic_mailbox_kms_key_id.map(|kms_key_id| {
+        use crate::{
+            domain::generic_mailbox::{GenericMailboxService, GenericMailboxes},
+            outbound::generic_mailbox::PgGenericMailboxBindings,
+        };
+        Arc::new(GenericMailboxService::new(
+            PgGenericMailboxBindings::new(db.clone()),
+            generic_mailbox_credentials::cipher::AwsKmsDataKeys::new(
+                aws_sdk_kms::Client::new(&aws_config),
+                kms_key_id,
+            ),
+        )) as Arc<dyn GenericMailboxes>
+    });
     let microsoft_auth = microsoft_token_cipher.map(|cipher| {
         use crate::{
             domain::microsoft::{MicrosoftAuth, MicrosoftAuthService},
@@ -918,6 +938,7 @@ async fn run_server() -> anyhow::Result<()> {
             github_link_service: Arc::new(github_link_service_impl),
             auth_client: Arc::new(auth_client),
             microsoft_auth,
+            generic_mailboxes,
             cursor_api_key_cipher,
             agent_api_keys,
             bots,

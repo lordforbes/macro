@@ -13,6 +13,7 @@ mod commands;
 mod contacts;
 mod credentials;
 mod drafts;
+mod generic_links;
 mod gmail_history;
 mod ingest;
 mod lifecycle;

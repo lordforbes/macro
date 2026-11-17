@@ -21,6 +21,8 @@ pub mod connection;
 pub mod contacts;
 pub mod credentials;
 pub mod drafts;
+/// Connecting generic (JMAP and IMAP) mailboxes.
+pub mod generic_connection;
 pub mod gmail_history;
 pub mod gmail_push;
 pub mod health;

@@ -246,6 +246,11 @@ inputs cannot select an agent, and ordinary user credentials remain unattributed
   `README.md` before changing signup behavior.
 - Denial responses and policy errors must never disclose configured allowlist
   addresses; never paste operational addresses into code, logs, or docs.
+- Generic (JMAP and IMAP) mailbox credentials live behind
+  `/internal/generic_mailbox_credentials/{link_id}` (`src/domain/generic_mailbox.rs`),
+  sealed by `crates/generic_mailbox_credentials` under the Microsoft token KMS
+  key with its own encryption-context purpose. Without Microsoft credentials
+  configured the routes answer 503. Never log or cache the read's response.
 - New Outlook connections need the deployment switch
   `OUTLOOK_CONNECTIONS_ENABLED` and the user's PostHog flag `enable-outlook`
   (`src/domain/microsoft.rs`), read with `crates/feature_flags` for the Macro

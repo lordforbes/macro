@@ -257,6 +257,9 @@ pub(crate) struct ApiContext {
     pub github_link_service: Arc<GithubLinkServiceType>,
     pub auth_client: Arc<fusionauth::FusionAuthClient>,
     pub microsoft_auth: Option<Arc<dyn MicrosoftAuth>>,
+    /// Generic mailbox credentials; absent when no Microsoft token KMS key is
+    /// configured, since they are sealed under the same key.
+    pub generic_mailboxes: Option<Arc<dyn crate::domain::generic_mailbox::GenericMailboxes>>,
     /// Encrypts users' Cursor API keys.
     pub cursor_api_key_cipher: Arc<dyn CursorApiKeyCipher>,
     /// Agents' own Anthropic and OpenAI API keys.

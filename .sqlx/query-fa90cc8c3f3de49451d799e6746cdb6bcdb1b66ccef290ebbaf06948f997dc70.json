@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO email_links (id, macro_id, fusionauth_user_id, email_address, provider, is_sync_active)\n            VALUES ($1, $2, $3, $4, $5::text::email_user_provider_enum, false)\n            ON CONFLICT (fusionauth_user_id, email_address, provider) DO NOTHING\n            RETURNING id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Varchar",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "fa90cc8c3f3de49451d799e6746cdb6bcdb1b66ccef290ebbaf06948f997dc70"
+}

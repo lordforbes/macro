@@ -1,6 +1,6 @@
 use axum::{
     Router,
-    routing::{delete, get, post},
+    routing::{delete, get, post, put},
 };
 
 use crate::api::ApiContext;
@@ -9,6 +9,7 @@ use super::user::post_get_names;
 
 // needs to be public in api crate for swagger
 mod delete_inbox_grant_user;
+mod generic_mailbox_credentials;
 mod github_access_token;
 mod google_access_token;
 mod microsoft_access_token;
@@ -27,6 +28,11 @@ pub fn router() -> Router<ApiContext> {
         .route("/github_access_token", get(github_access_token::handler))
         .route("/google_access_token", get(google_access_token::handler))
         .route("/microsoft_grant", get(microsoft_grant::handler))
+        .route(
+            "/generic_mailbox_credentials/{link_id}",
+            put(generic_mailbox_credentials::store_handler)
+                .get(generic_mailbox_credentials::read_handler),
+        )
         .route(
             "/microsoft_access_token",
             get(microsoft_access_token::handler),
