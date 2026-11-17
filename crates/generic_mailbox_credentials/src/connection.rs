@@ -90,7 +90,9 @@ impl std::fmt::Debug for MailboxServer {
 
 /// A JMAP server origin, such as `https://mail.example.com`.
 ///
-/// HTTPS only, except plain HTTP to this machine for local test servers. The
+/// HTTPS only, except plain HTTP to this machine or to a single-label host
+/// (a container name such as `mailflare`, which public DNS never resolves),
+/// for local test servers. The
 /// adapter refuses a session whose API or download URLs leave this origin, so
 /// the key is never sent anywhere else.
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -104,7 +106,7 @@ impl JmapOrigin {
         let host = url.host_str().ok_or(InvalidConnection::Endpoint)?;
         let secure = match url.scheme() {
             "https" => true,
-            "http" => is_loopback(host),
+            "http" => is_loopback(host) || is_single_label(host),
             _ => false,
         };
         if !secure || !url.username().is_empty() || url.password().is_some() {
@@ -198,7 +200,8 @@ pub enum InvalidConnection {
     /// The protocol is neither JMAP nor IMAP.
     #[error("the protocol must be jmap or imap")]
     Protocol,
-    /// The JMAP endpoint is not an HTTPS origin (or HTTP to this machine).
+    /// The JMAP endpoint is not an HTTPS origin (or HTTP to this machine or a
+    /// single-label host).
     #[error("the JMAP endpoint must be an https:// address")]
     Endpoint,
     /// The IMAP host is not a bare host name.
@@ -222,6 +225,14 @@ fn is_loopback(host: &str) -> bool {
             .trim_end_matches(']')
             .parse::<std::net::IpAddr>()
             .is_ok_and(|address| address.is_loopback())
+}
+
+/// A host name with no dots: a name on a local or container network. An IP
+/// address is not one, so `http://10.0.0.1` stays refused.
+fn is_single_label(host: &str) -> bool {
+    !host.is_empty()
+        && !host.contains(['.', ':', '[', ']'])
+        && host.parse::<std::net::IpAddr>().is_err()
 }
 
 impl TryFrom<String> for JmapOrigin {

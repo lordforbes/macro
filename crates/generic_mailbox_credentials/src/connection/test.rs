@@ -10,16 +10,25 @@ fn jmap_origin_keeps_only_the_origin_of_an_https_url() {
 }
 
 #[test]
-fn jmap_origin_allows_plain_http_only_to_this_machine() {
+fn jmap_origin_allows_plain_http_only_to_this_machine_or_a_local_name() {
     assert_eq!(
         JmapOrigin::parse("http://localhost:8787").unwrap().as_str(),
         "http://localhost:8787"
     );
     assert!(JmapOrigin::parse("http://127.0.0.1:8787").is_ok());
     assert!(JmapOrigin::parse("http://[::1]:8787").is_ok());
+    // A container name on the local stack's network.
+    assert_eq!(
+        JmapOrigin::parse("http://Mailflare:3110").unwrap().as_str(),
+        "http://mailflare:3110"
+    );
 
     for refused in [
         "http://mail.example.com",
+        "http://mail.example.com.",
+        "http://10.0.0.1",
+        "http://[fd00::1]",
+        "http://167772161",
         "ftp://mail.example.com",
         "https://user:pass@mail.example.com",
         "mail.example.com",
