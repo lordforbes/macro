@@ -7566,6 +7566,7 @@ dependencies = [
  "html-escape",
  "http 1.4.0",
  "httpdate",
+ "lazy-regex",
  "macro_db_migrator",
  "macro_event_broker",
  "macro_service_urls",

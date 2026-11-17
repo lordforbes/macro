@@ -6,6 +6,8 @@
 
 #[cfg(test)]
 mod test;
+/// Threads synthesised from message headers.
+pub mod threads;
 
 use serde::{Deserialize, Serialize};
 
