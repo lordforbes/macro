@@ -92,16 +92,26 @@ pub async fn list_links_handler(
                 server_threads,
             };
             let inbox = entry.facts;
-            api::link::Link::new(
-                inbox.link,
-                api::settings::Settings::from(inbox.settings),
-                sync_status,
+            let link = inbox.link;
+            api::link::Link {
+                id: link.id,
+                macro_id: link.macro_id,
+                fusionauth_user_id: link.fusionauth_user_id,
+                email_address: link.email_address,
+                photo_url: inbox.photo_url,
+                provider: api::link::UserProvider::from(link.provider),
                 capabilities,
-                inbox.photo_url,
-                entry.needs_calendar_permission,
-                inbox.calendar_disabled,
-                inbox.has_calendar_data,
-            )
+                is_sync_active: link.is_sync_active,
+                sync_status,
+                needs_reauth: link.needs_reauth,
+                needs_calendar_permission: entry.needs_calendar_permission,
+                calendar_disabled: inbox.calendar_disabled,
+                has_calendar_data: inbox.has_calendar_data,
+                settings: api::settings::Settings::from(inbox.settings),
+                is_primary: link.is_primary,
+                created_at: link.created_at,
+                updated_at: link.updated_at,
+            }
         })
         .collect();
 

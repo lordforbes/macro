@@ -1,5 +1,4 @@
 use crate::api::settings::Settings;
-use crate::service;
 use crate::service::backfill::BackfillJobStatus;
 use chrono::{DateTime, Utc};
 use macro_user_id::{email::EmailStr, user_id::MacroUserIdStr};
@@ -159,35 +158,3 @@ pub struct Link {
     pub updated_at: DateTime<Utc>,
 }
 
-impl Link {
-    pub fn new(
-        source: service::link::Link,
-        settings: Settings,
-        sync_status: SyncStatus,
-        capabilities: MailboxCapabilities,
-        photo_url: Option<String>,
-        needs_calendar_permission: bool,
-        calendar_disabled: bool,
-        has_calendar_data: bool,
-    ) -> Self {
-        Link {
-            id: source.id,
-            macro_id: source.macro_id,
-            fusionauth_user_id: source.fusionauth_user_id,
-            email_address: source.email_address,
-            photo_url,
-            provider: UserProvider::from(source.provider),
-            capabilities,
-            is_sync_active: source.is_sync_active,
-            sync_status,
-            needs_reauth: source.needs_reauth,
-            needs_calendar_permission,
-            calendar_disabled,
-            has_calendar_data,
-            settings,
-            is_primary: source.is_primary,
-            created_at: source.created_at,
-            updated_at: source.updated_at,
-        }
-    }
-}
