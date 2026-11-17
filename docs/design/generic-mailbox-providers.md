@@ -132,6 +132,8 @@ Built in Phase 1 (17 November 2026).
 - **Code.** `crates/generic_mailbox_credentials` (connection types, the redacting and zeroising `MailboxSecret`, the cipher, the row); `authentication_service` `domain/generic_mailbox.rs` and its internal routes; `authentication_service_client` methods.
 - **Creating a link.** `email::domain::mailbox::generic_connection` creates an `email_links` row (provider `JMAP` or `IMAP`, `grant_id` null, **`is_sync_active = false`**) and stores the credentials; if storing fails, it deletes the link. Inactive keeps every sync worker away, including Gmail paths that select links without a provider filter; Phase 2 activates links once the adapter and that audit are done. Uniqueness is the existing `(fusionauth_user_id, email_address, provider)` constraint. The operator CLI `email_service`'s `connect_generic_mailbox` drives it until the add-account form exists; it takes the owner's FusionAuth id as an argument and reads the secret from stdin. It skips the inbox-count entitlement, which the form will apply.
 
+- **Deploy order.** The migrations are safe to land first: nothing deployed writes the new enum values. Binaries from before this work decode `email_links.provider` into a two-value enum and fail on a `JMAP` or `IMAP` row, so no generic link may be created until every email, authentication and calendar binary runs this release, and rolling back past it requires deleting generic links first. The CLI's doc comment says the same.
+
 Logging: `Debug` for every connection type prints the protocol only. Endpoint, host and username are treated as addresses and never logged.
 
 Deleting the row, or its link, does not revoke the secret at the mail server; any disconnect surface must say so.

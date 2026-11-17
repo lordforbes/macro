@@ -8,6 +8,12 @@
 //! The password or API key is read from standard input (one line), never
 //! from an argument, so it stays out of shell history and process listings.
 //!
+//! Run it only once every email, authentication and calendar binary is on a
+//! release that knows the `JMAP` and `IMAP` providers. Older binaries decode
+//! `email_links.provider` strictly and fail on a generic link's row, so do
+//! not roll back past that release while a generic link exists; delete the
+//! generic links first.
+//!
 //! ```text
 //! printf '%s\n' "$KEY" | connect_generic_mailbox \
 //!     --owner 'macro|someone@example.com' --credential-owner <fusionauth id> \
