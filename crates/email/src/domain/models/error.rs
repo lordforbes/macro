@@ -5,6 +5,10 @@ use uuid::Uuid;
 /// Errors that can occur in the email domain.
 #[derive(Debug, Error)]
 pub enum EmailErr {
+    /// The inbox's provider cannot make this change: a read-only generic
+    /// (JMAP or IMAP) mailbox.
+    #[error("This inbox is read-only in Macro")]
+    ReadOnlyMailbox,
     /// A send attempt was reused with a different approved snapshot.
     #[error("Send attempt payload does not match the original request")]
     SendAttemptConflict,

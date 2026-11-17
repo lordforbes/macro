@@ -93,7 +93,8 @@ impl From<EmailErr> for CreateDraftError {
             | EmailErr::Utf8Error(_)
             | EmailErr::InvalidSender
             | EmailErr::UnverifiedSendingAlias { .. }
-            | EmailErr::SendAsPermissionRequired => CreateDraftError::Validation(err.to_string()),
+            | EmailErr::SendAsPermissionRequired
+            | EmailErr::ReadOnlyMailbox => CreateDraftError::Validation(err.to_string()),
             _ => CreateDraftError::Internal(err),
         }
     }

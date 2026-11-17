@@ -18,7 +18,9 @@ impl IntoResponse for ArchiveThreadError {
         let status = match &self.0 {
             EmailErr::ThreadNotFound | EmailErr::ThreadEmpty => StatusCode::NOT_FOUND,
             EmailErr::Unauthorized => StatusCode::FORBIDDEN,
-            EmailErr::ThreadHasNoInboundMessages => StatusCode::CONFLICT,
+            EmailErr::ThreadHasNoInboundMessages | EmailErr::ReadOnlyMailbox => {
+                StatusCode::CONFLICT
+            }
             EmailErr::TooManyThreads(_) => StatusCode::BAD_REQUEST,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         };

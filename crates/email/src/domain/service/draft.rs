@@ -459,6 +459,10 @@ where
         ),
         EmailErr,
     > {
+        // A read-only (generic) mailbox neither keeps drafts nor sends.
+        if !link.provider.capabilities().drafts {
+            return Err(EmailErr::ReadOnlyMailbox);
+        }
         let link_id = link.id;
         let sender = self
             .resolve_sender(link, input.sender_email.as_ref(), !is_draft)

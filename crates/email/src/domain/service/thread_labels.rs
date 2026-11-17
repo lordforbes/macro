@@ -99,6 +99,7 @@ fn rejects_thread(error: &EmailErr) -> bool {
         EmailErr::ThreadNotFound
             | EmailErr::ThreadEmpty
             | EmailErr::ThreadHasNoInboundMessages
+            | EmailErr::ReadOnlyMailbox
             | EmailErr::LabelNotFound
             | EmailErr::EmptyProviderLabelId
             | EmailErr::Unauthorized
@@ -138,6 +139,10 @@ where
             .await
             .map_err(|e| EmailErr::RepoErr(anyhow::Error::from(e)))?
             .ok_or(EmailErr::ThreadNotFound)?;
+        // A read-only (generic) mailbox takes no organization changes.
+        if !link.provider.capabilities().organize {
+            return Err(EmailErr::ReadOnlyMailbox);
+        }
         if link.provider == UserProvider::Outlook {
             return Ok(self
                 .queue_outlook_action(&link, thread_id, actor, action)
@@ -216,6 +221,12 @@ where
             .await
             .map_err(|e| EmailErr::RepoErr(anyhow::Error::from(e)))?;
 
+        // Opening a thread in a read-only (generic) mailbox records the view
+        // above but changes nothing on the server: its read state stays the
+        // server's.
+        if !link.provider.capabilities().organize {
+            return Ok(0);
+        }
         if link.provider == UserProvider::Outlook {
             return Ok(self
                 .queue_outlook_action(&link, thread_id, macro_id, MailboxAction::Read(true))
@@ -266,6 +277,10 @@ where
             .map_err(|e| EmailErr::RepoErr(anyhow::Error::from(e)))?
             .ok_or(EmailErr::ThreadNotFound)?;
 
+        // A read-only (generic) mailbox takes no organization changes.
+        if !link.provider.capabilities().organize {
+            return Err(EmailErr::ReadOnlyMailbox);
+        }
         // Resolve from the authorized thread's inbox, never the caller's primary
         // inbox: multi-inbox users have a distinct UNREAD label for each link.
         if link.provider == UserProvider::Outlook {
@@ -317,6 +332,10 @@ where
         actor: macro_user_id::user_id::MacroUserIdStr<'static>,
         in_inbox: bool,
     ) -> Result<usize, EmailErr> {
+        // A read-only (generic) mailbox takes no organization changes.
+        if !link.provider.capabilities().organize {
+            return Err(EmailErr::ReadOnlyMailbox);
+        }
         if link.provider == UserProvider::Outlook {
             return Ok(self
                 .queue_outlook_action(link, thread_id, actor, MailboxAction::Archived(!in_inbox))
@@ -452,6 +471,10 @@ where
             .map_err(|e| EmailErr::RepoErr(anyhow::Error::from(e)))?
             .ok_or(EmailErr::LabelNotFound)?;
 
+        // A read-only (generic) mailbox takes no organization changes.
+        if !link.provider.capabilities().organize {
+            return Err(EmailErr::ReadOnlyMailbox);
+        }
         if link.provider == UserProvider::Outlook {
             return self
                 .queue_outlook_action(
@@ -528,6 +551,10 @@ where
                 if !archived {
                     self.ensure_thread_has_received_messages(thread_id, link.id)
                         .await?;
+                }
+                // A read-only (generic) mailbox takes no organization changes.
+                if !link.provider.capabilities().organize {
+                    return Err(EmailErr::ReadOnlyMailbox);
                 }
                 if link.provider == UserProvider::Outlook {
                     self.queue_outlook_action(

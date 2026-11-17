@@ -28,6 +28,10 @@ where
             .iter()
             .find(|link| link.id == link_id)
             .ok_or(EmailErr::InboxNotFound)?;
+        // A read-only (generic) mailbox sends nothing, so it has no senders.
+        if !link.provider.capabilities().send {
+            return Ok(Vec::new());
+        }
         if link.provider == crate::domain::models::UserProvider::Outlook {
             return Ok(vec![crate::domain::senders::SendAsAddress {
                 email_address: link.email_address.clone(),

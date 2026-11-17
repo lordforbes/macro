@@ -250,7 +250,13 @@ impl<R: MailboxSettingsRepository, G: MailboxSettingsGateway> MailboxSettingsSer
         {
             return Err(MailboxError::InvalidInput("invalid sender address"));
         }
-        self.repository.accessible(actor, link).await?;
+        let mailbox = self.repository.accessible(actor, link).await?;
+        // Generic mailboxes have no server-side sender rules.
+        if matches!(mailbox.provider, UserProvider::Jmap | UserProvider::Imap) {
+            return Err(MailboxError::Provider(EmailApiError::Unsupported {
+                capability: email_api_client::domain::models::MailboxCapability::SenderRules,
+            }));
+        }
         self.repository
             .sender_block(actor, link, &sender, blocked)
             .await

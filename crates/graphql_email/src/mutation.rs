@@ -615,6 +615,7 @@ pub fn draft_mutation_error(error: &EmailErr) -> async_graphql::Error {
             "SEND_AS_UNAVAILABLE",
         ),
         EmailErr::CannotReplyToDraft => ("cannot reply to a draft", "INVALID"),
+        EmailErr::ReadOnlyMailbox => ("this inbox is read-only in Macro", "READ_ONLY_MAILBOX"),
         EmailErr::Base64DecodeError(_) | EmailErr::Utf8Error(_) => {
             ("email draft body is invalid", "INVALID")
         }
@@ -642,6 +643,7 @@ fn mutation_error(error: &EmailErr) -> async_graphql::Error {
         }
         EmailErr::Unauthorized => "not authorized to update email thread",
         EmailErr::TooManyThreads(_) => "too many email threads in one request",
+        EmailErr::ReadOnlyMailbox => "this inbox is read-only in Macro",
         _ => "email thread mutation failed",
     };
     async_graphql::Error::new(message)
