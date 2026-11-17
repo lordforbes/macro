@@ -14,6 +14,7 @@ import ArrowBendUpRight from '@icon/system/regular/arrow-bend-up-right.svg';
 import ArrowDown from '@icon/system/regular/arrow-down.svg';
 import ArrowUp from '@icon/system/regular/arrow-up.svg';
 import CheckIcon from '@icon/system/regular/check.svg';
+import { useInboxReadOnly } from '@queries/email/inbox-email';
 import { createCallback } from '@solid-primitives/rootless';
 import { cn } from '@ui';
 import { type Component, createSignal, Show } from 'solid-js';
@@ -66,6 +67,8 @@ export function BottomReplyButtons(props: {
   const ctx = useEmailThreadState();
   const viewContext = useEmailThreadViewContext();
   const currentUserEmail = viewContext.thread.viewerEmail;
+  // A read-only (JMAP or IMAP) inbox shows its controls disabled.
+  const readOnly = useInboxReadOnly(() => ctx.thread()?.link_id);
 
   const open = (type: ReplyType) =>
     createCallback(() => {
@@ -131,7 +134,8 @@ export function BottomReplyButtons(props: {
         <div class="flex w-full items-center pt-4">
           <button
             type="button"
-            class="flex min-w-0 flex-1 items-center gap-2 rounded-md text-left text-sm text-ink-placeholder hover:text-ink-muted"
+            class="flex min-w-0 flex-1 items-center gap-2 rounded-md text-left text-sm text-ink-placeholder hover:text-ink-muted disabled:opacity-50"
+            disabled={readOnly()}
             onClick={open('reply-all')}
           >
             <UserIcon
@@ -156,6 +160,7 @@ export function BottomReplyButtons(props: {
                 icon={ArrowBendUpLeft}
                 label={shownLabel('reply', t('emailThread.reply'))}
                 ariaLabel={t('emailThread.reply')}
+                disabled={readOnly()}
                 onClick={open('reply')}
               />
               <Show when={showReplyAll()}>
@@ -163,6 +168,7 @@ export function BottomReplyButtons(props: {
                   icon={ArrowBendDoubleUpLeft}
                   label={shownLabel('reply-all', t('emailThread.replyAll'))}
                   ariaLabel={t('emailThread.replyAll')}
+                  disabled={readOnly()}
                   onClick={open('reply-all')}
                 />
               </Show>
@@ -171,6 +177,7 @@ export function BottomReplyButtons(props: {
                   icon={ArrowBendUpRight}
                   label={shownLabel('forward', t('emailThread.forward'))}
                   ariaLabel={t('emailThread.forward')}
+                  disabled={readOnly()}
                   onClick={open('forward')}
                 />
               </Show>
@@ -212,6 +219,7 @@ export function BottomReplyButtons(props: {
                       ? t('emailThread.markNotDone')
                       : t('emailThread.markDone')
                   }
+                  disabled={readOnly()}
                   onClick={toggleMarkDone}
                 />
               </Show>

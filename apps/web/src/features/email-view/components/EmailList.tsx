@@ -48,6 +48,7 @@ import CaretDownIcon from '@icon/system/regular/caret-down.svg';
 import CheckIcon from '@icon/system/regular/check.svg';
 import SpinnerIcon from '@icon/system/regular/spinner.svg';
 import { useRestoreEmailFolderMutation } from '@queries/email/folders';
+import { useInboxReadOnly } from '@queries/email/inbox-email';
 import { createElementSize } from '@solid-primitives/resize-observer';
 import { Button, cn } from '@ui';
 import { tourTarget } from '@ui/components/Tour';
@@ -479,17 +480,21 @@ export function EmailList(props: EmailListProps) {
   function RowActions(props: { row: EmailActionRow }) {
     const archived = () =>
       props.row.entity.type === 'email' && props.row.entity.done;
+    // A read-only inbox (generic JMAP or IMAP) can't move its threads.
+    const readOnly = useInboxReadOnly(() =>
+      props.row.entity.type === 'email' ? props.row.entity.linkId : undefined
+    );
 
     return (
       <EmailRowActions
         archived={archived()}
-        canArchive={entityActionViewContext().supportsMarkDone}
-        canUnarchive={canMarkNotDone(props.row.entity)}
+        canArchive={entityActionViewContext().supportsMarkDone && !readOnly()}
+        canUnarchive={canMarkNotDone(props.row.entity) && !readOnly()}
         pending={
           rowActionState.isPending(props.row.rowId) || restoreFolder.isPending
         }
         restore={
-          isExcludedEmailFolder(state.tab)
+          isExcludedEmailFolder(state.tab) && !readOnly()
             ? {
                 label: restoreLabel(),
                 run: () =>
