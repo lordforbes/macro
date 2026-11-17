@@ -75,15 +75,18 @@ async fn the_kms_context_names_the_purpose_and_the_link() {
 
     cipher.encrypt(LINK, &secret()).await.unwrap();
 
-    let context = cipher.data_keys.generated_under.lock().unwrap().clone().unwrap();
+    let context = cipher
+        .data_keys
+        .generated_under
+        .lock()
+        .unwrap()
+        .clone()
+        .unwrap();
     assert_eq!(
         context.get("macro:purpose").map(String::as_str),
         Some("generic-mailbox-secret")
     );
-    assert_eq!(
-        context.get("macro:email-link-id"),
-        Some(&LINK.to_string())
-    );
+    assert_eq!(context.get("macro:email-link-id"), Some(&LINK.to_string()));
 }
 
 #[tokio::test]
@@ -133,7 +136,9 @@ fn a_secret_never_prints() {
 #[test]
 fn a_secret_keeps_its_spaces_but_refuses_empty_and_nul() {
     assert_eq!(
-        MailboxSecret::parse(" pass word ".to_owned()).unwrap().expose(),
+        MailboxSecret::parse(" pass word ".to_owned())
+            .unwrap()
+            .expose(),
         " pass word "
     );
     assert!(MailboxSecret::parse(String::new()).is_err());

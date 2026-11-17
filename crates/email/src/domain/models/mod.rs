@@ -37,8 +37,7 @@ pub use label::{
 };
 pub use link::{
     EmailBackfillStatus, EmailInboxDetails, EmailSyncStatus, Link, MailboxCapabilities,
-    ResolvedSendingInbox,
-    SendingInboxRequest, UserEmailLink, UserEmailLinkSettings, UserProvider,
+    ResolvedSendingInbox, SendingInboxRequest, UserEmailLink, UserEmailLinkSettings, UserProvider,
 };
 pub use mail_projection::{
     EmailDraftAggregate, EmailDraftEntry, EmailPreview, EmailThreadDraftState,

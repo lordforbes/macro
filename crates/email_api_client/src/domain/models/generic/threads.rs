@@ -140,7 +140,8 @@ impl SyntheticThreads {
         for node in &nodes {
             self.join(&linked.own, node);
         }
-        self.messages.insert(message_key.to_owned(), linked.own.clone());
+        self.messages
+            .insert(message_key.to_owned(), linked.own.clone());
 
         let representative = self.find(&linked.own);
         let thread_id = thread_id_for(&self.name(&representative));
@@ -234,7 +235,10 @@ impl SyntheticThreads {
         }
         self.union.insert(absorb.clone(), keep.clone());
         let absorbed_roots = self.roots.remove(&absorb).unwrap_or_default();
-        self.roots.entry(keep.clone()).or_default().extend(absorbed_roots);
+        self.roots
+            .entry(keep.clone())
+            .or_default()
+            .extend(absorbed_roots);
         if let Some(absorbed_smallest) = self.smallest.remove(&absorb) {
             let smallest = self
                 .smallest

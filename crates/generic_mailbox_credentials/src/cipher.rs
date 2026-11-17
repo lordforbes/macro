@@ -187,12 +187,11 @@ impl<P: DataKeyProvider> MailboxSecretCipher<P> {
                 },
             )
             .map_err(|_| MailboxSecretCipherError::DecryptionFailed)?;
-        let plaintext = String::from_utf8(plaintext)
-            .map_err(|error| {
-                // The rejected bytes are the secret; wipe them.
-                drop(Zeroizing::new(error.into_bytes()));
-                MailboxSecretCipherError::MalformedPlaintext
-            })?;
+        let plaintext = String::from_utf8(plaintext).map_err(|error| {
+            // The rejected bytes are the secret; wipe them.
+            drop(Zeroizing::new(error.into_bytes()));
+            MailboxSecretCipherError::MalformedPlaintext
+        })?;
         MailboxSecret::parse(plaintext).map_err(|_| MailboxSecretCipherError::MalformedPlaintext)
     }
 }

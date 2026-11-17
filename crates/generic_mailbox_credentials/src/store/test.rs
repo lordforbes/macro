@@ -94,10 +94,8 @@ async fn a_secret_cannot_attach_to_another_providers_link(pool: PgPool) {
     let imap_link = insert_link(&pool, "IMAP").await;
 
     let on_gmail = upsert_binding(&pool, gmail, &jmap(), &username(), &encrypted(1)).await;
-    let jmap_on_imap =
-        upsert_binding(&pool, imap_link, &jmap(), &username(), &encrypted(1)).await;
-    let missing =
-        upsert_binding(&pool, Uuid::now_v7(), &jmap(), &username(), &encrypted(1)).await;
+    let jmap_on_imap = upsert_binding(&pool, imap_link, &jmap(), &username(), &encrypted(1)).await;
+    let missing = upsert_binding(&pool, Uuid::now_v7(), &jmap(), &username(), &encrypted(1)).await;
 
     assert!(matches!(on_gmail, Err(BindingStoreError::LinkNotFound)));
     assert!(matches!(jmap_on_imap, Err(BindingStoreError::LinkNotFound)));

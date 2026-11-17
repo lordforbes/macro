@@ -150,9 +150,9 @@ async fn run() -> Result<(), Report> {
             println!("connected: link {link_id} (inactive until its adapter is enabled)");
             Ok(())
         }
-        Err(GenericConnectionError::AlreadyConnected) => {
-            Err(rootcause::report!("this owner already has this mailbox connected"))
-        }
+        Err(GenericConnectionError::AlreadyConnected) => Err(rootcause::report!(
+            "this owner already has this mailbox connected"
+        )),
         Err(error) => Err(Report::new(error).into_dynamic()),
     }
 }

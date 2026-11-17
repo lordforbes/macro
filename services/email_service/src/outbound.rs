@@ -6,12 +6,12 @@ pub mod invitation_extraction;
 
 /// Email provider API adapters and composition types.
 pub mod email_api;
+/// Generic (JMAP and IMAP) mailbox credentials in the authentication service.
+pub mod generic_credentials;
 /// Frozen content and attachment inputs for durable Outlook draft work.
 pub mod mailbox_drafts;
 /// Verified mailbox setup storage and authentication adapters.
 pub mod mailbox_init;
-/// Generic (JMAP and IMAP) mailbox credentials in the authentication service.
-pub mod generic_credentials;
 /// Durable email projections to search, notifications, contacts and storage.
 pub mod mailbox_projection;
 /// Persistence and provider adapters for scheduled-delivery claims.

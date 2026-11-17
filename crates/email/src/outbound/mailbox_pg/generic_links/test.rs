@@ -33,7 +33,11 @@ async fn a_generic_link_is_created_inactive_and_only_once(pool: PgPool) {
         .await
         .unwrap();
     let again = repo
-        .create_inactive_link(Uuid::now_v7(), &request("box@example.com"), UserProvider::Jmap)
+        .create_inactive_link(
+            Uuid::now_v7(),
+            &request("box@example.com"),
+            UserProvider::Jmap,
+        )
         .await
         .unwrap();
 

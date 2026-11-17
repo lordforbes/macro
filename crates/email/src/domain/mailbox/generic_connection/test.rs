@@ -49,7 +49,11 @@ struct FakeCredentials {
 impl GenericCredentialStore for FakeCredentials {
     type Err = TestError;
 
-    async fn store(&self, link_id: Uuid, _credentials: &MailboxCredentials) -> Result<(), TestError> {
+    async fn store(
+        &self,
+        link_id: Uuid,
+        _credentials: &MailboxCredentials,
+    ) -> Result<(), TestError> {
         if self.fail {
             return Err(TestError);
         }
@@ -96,7 +100,10 @@ async fn connecting_creates_a_link_of_the_servers_provider_and_stores_its_creden
         *service.links.created.lock().unwrap(),
         vec![(jmap_id, UserProvider::Jmap), (imap_id, UserProvider::Imap)]
     );
-    assert_eq!(*service.credentials.stored.lock().unwrap(), vec![jmap_id, imap_id]);
+    assert_eq!(
+        *service.credentials.stored.lock().unwrap(),
+        vec![jmap_id, imap_id]
+    );
 }
 
 #[tokio::test]
@@ -111,7 +118,10 @@ async fn a_mailbox_already_connected_is_refused_without_storing_credentials() {
 
     let result = service.connect(request(jmap())).await;
 
-    assert!(matches!(result, Err(GenericConnectionError::AlreadyConnected)));
+    assert!(matches!(
+        result,
+        Err(GenericConnectionError::AlreadyConnected)
+    ));
     assert!(service.credentials.stored.lock().unwrap().is_empty());
 }
 
@@ -127,7 +137,10 @@ async fn a_failed_credential_store_removes_the_new_link() {
 
     let result = service.connect(request(imap())).await;
 
-    assert!(matches!(result, Err(GenericConnectionError::Unavailable(_))));
+    assert!(matches!(
+        result,
+        Err(GenericConnectionError::Unavailable(_))
+    ));
     let created = service.links.created.lock().unwrap()[0].0;
     assert_eq!(*service.links.deleted.lock().unwrap(), vec![created]);
 }

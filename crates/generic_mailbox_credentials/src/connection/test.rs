@@ -86,7 +86,9 @@ fn servers_read_from_the_wire_with_the_same_checks() {
 #[test]
 fn username_is_trimmed_and_must_be_printable() {
     assert_eq!(
-        MailboxUsername::parse(" someone@example.com\n").unwrap().as_str(),
+        MailboxUsername::parse(" someone@example.com\n")
+            .unwrap()
+            .as_str(),
         "someone@example.com"
     );
     assert_eq!(

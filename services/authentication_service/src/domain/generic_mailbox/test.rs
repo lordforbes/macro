@@ -114,7 +114,10 @@ fn credentials(secret: &str) -> MailboxCredentials {
 async fn stored_credentials_open_for_their_link() {
     let service = service(&[LINK]);
 
-    service.store(LINK, credentials("app password")).await.unwrap();
+    service
+        .store(LINK, credentials("app password"))
+        .await
+        .unwrap();
     let opened = service.credentials(LINK).await.unwrap();
 
     assert_eq!(opened.secret.expose(), "app password");
@@ -126,7 +129,10 @@ async fn stored_credentials_open_for_their_link() {
 async fn only_ciphertext_is_stored() {
     let service = service(&[LINK]);
 
-    service.store(LINK, credentials("app password")).await.unwrap();
+    service
+        .store(LINK, credentials("app password"))
+        .await
+        .unwrap();
 
     let rows = service.bindings.rows.lock().unwrap();
     let stored = &rows[&LINK].encrypted.secret_ciphertext;
@@ -156,7 +162,12 @@ async fn a_row_moved_to_another_link_does_not_open() {
     let service = service(&[LINK, OTHER_LINK]);
     service.store(LINK, credentials("x")).await.unwrap();
     let moved = service.bindings.rows.lock().unwrap()[&LINK].clone();
-    service.bindings.rows.lock().unwrap().insert(OTHER_LINK, moved);
+    service
+        .bindings
+        .rows
+        .lock()
+        .unwrap()
+        .insert(OTHER_LINK, moved);
 
     let result = service.credentials(OTHER_LINK).await;
 

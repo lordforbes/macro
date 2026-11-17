@@ -68,7 +68,10 @@ fn the_thread_id_does_not_depend_on_arrival_order() {
             threads.insert(key, headers);
         }
         seen.push(threads.thread_id("root").unwrap());
-        assert_eq!(threads.thread_id("root"), threads.thread_id("reply-to-reply"));
+        assert_eq!(
+            threads.thread_id("root"),
+            threads.thread_id("reply-to-reply")
+        );
     }
     assert!(seen.windows(2).all(|pair| pair[0] == pair[1]), "{seen:?}");
 }
@@ -100,11 +103,19 @@ fn replies_to_a_message_not_seen_still_share_a_thread() {
     let mut threads = SyntheticThreads::new();
     let one = threads.insert(
         "one",
-        headers(Some("<r1@example.com>"), Some("<missing@example.com>"), None),
+        headers(
+            Some("<r1@example.com>"),
+            Some("<missing@example.com>"),
+            None,
+        ),
     );
     let two = threads.insert(
         "two",
-        headers(Some("<r2@example.com>"), Some("<missing@example.com>"), None),
+        headers(
+            Some("<r2@example.com>"),
+            Some("<missing@example.com>"),
+            None,
+        ),
     );
 
     assert_eq!(one.thread_id, two.thread_id);
@@ -156,7 +167,11 @@ fn a_malformed_header_is_ignored() {
 
     let odd = threads.insert(
         "odd",
-        headers(Some("not-bracketed@example.com"), Some("<a@example.com"), None),
+        headers(
+            Some("not-bracketed@example.com"),
+            Some("<a@example.com"),
+            None,
+        ),
     );
 
     assert_ne!(odd.thread_id, root.thread_id);

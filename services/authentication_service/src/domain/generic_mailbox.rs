@@ -6,13 +6,13 @@
 //! secret each time it signs in and drops it straight after.
 
 use generic_mailbox_credentials::{
+    cipher::EncryptedMailboxSecret,
+    connection::{MailboxServer, MailboxUsername},
+};
+use generic_mailbox_credentials::{
     cipher::{DataKeyProvider, MailboxSecretCipher, MailboxSecretCipherError},
     credentials::MailboxCredentials,
     store::StoredBinding,
-};
-use generic_mailbox_credentials::{
-    cipher::EncryptedMailboxSecret,
-    connection::{MailboxServer, MailboxUsername},
 };
 use uuid::Uuid;
 

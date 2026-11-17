@@ -4,13 +4,13 @@
 //! Everything here is pure mapping. Protocol clients live in the outbound
 //! adapters; nothing in this module reads or writes a server.
 
+/// The read-only safety check adapter tests run around a sync.
+#[cfg(any(test, feature = "test-support"))]
+pub mod safety;
 #[cfg(test)]
 mod test;
 /// Threads synthesised from message headers.
 pub mod threads;
-/// The read-only safety check adapter tests run around a sync.
-#[cfg(any(test, feature = "test-support"))]
-pub mod safety;
 
 use serde::{Deserialize, Serialize};
 

@@ -57,7 +57,10 @@ impl AuthServiceClient {
     }
 
     fn generic_mailbox_url(&self, link_id: Uuid) -> String {
-        format!("{}/internal/generic_mailbox_credentials/{link_id}", self.url)
+        format!(
+            "{}/internal/generic_mailbox_credentials/{link_id}",
+            self.url
+        )
     }
 }
 

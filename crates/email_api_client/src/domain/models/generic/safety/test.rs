@@ -48,9 +48,7 @@ fn every_kind_of_change_is_reported() {
     let mut after = server();
     let inbox = after.mailboxes.get_mut("inbox").unwrap();
     inbox.unread = 0;
-    inbox
-        .messages
-        .insert("7:2".to_owned(), flags(&["\\Seen"]));
+    inbox.messages.insert("7:2".to_owned(), flags(&["\\Seen"]));
     inbox.messages.remove("7:1");
     inbox.messages.insert("7:3".to_owned(), flags(&[]));
     after
