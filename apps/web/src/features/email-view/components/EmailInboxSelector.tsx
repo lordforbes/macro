@@ -4,6 +4,7 @@ import { inboxIconProps } from '@core/component/inboxIcon';
 import { UserIcon, type UserIconSize } from '@core/component/UserIcon';
 import { enableMultiInbox } from '@core/constant/featureFlags';
 import { useAddInboxFlow } from '@core/email-link';
+import { isOAuthProvider } from '@core/email-link/provider';
 import { isTouchDevice } from '@core/mobile/isTouchDevice';
 import { fireAndForget } from '@core/util/fireAndForget';
 import AtIcon from '@icon/system/regular/at.svg';
@@ -51,7 +52,14 @@ function useInboxSelection() {
 
   const options = createMemo((): InboxOption[] => {
     const links = linksQuery.isSuccess ? (linksQuery.data?.links ?? []) : [];
-    return fromInboxOptions(links).map((option) => ({
+    // Every inbox can be read and filtered by, including read-only (JMAP and
+    // IMAP) mailboxes; only the compose limits read a provider, so theirs is
+    // left out.
+    const readable = links.map((link) => ({
+      ...link,
+      provider: isOAuthProvider(link.provider) ? link.provider : undefined,
+    }));
+    return fromInboxOptions(readable).map((option) => ({
       id: option.id,
       inboxId: option.inboxId,
       label: option.email_address,

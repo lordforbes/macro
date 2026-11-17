@@ -7,6 +7,8 @@ import {
 } from '@core/constant/featureFlags';
 import { useEmailLinks } from '@core/email-link';
 import { OutlookBetaBadge } from '@core/email-link/OutlookBetaBadge';
+import type { EmailProvider } from '@core/email-link/ProviderDialog';
+import { isOAuthProvider } from '@core/email-link/provider';
 import { PipedreamConnectorIcon } from '@core/pipedream/ConnectorIcon';
 import { fireAndForget } from '@core/util/fireAndForget';
 import { openExternalUrl } from '@core/util/url';
@@ -14,6 +16,7 @@ import ClaudeIcon from '@icon/claude-color.svg';
 import GmailIcon from '@icon/gmail-color.svg';
 import OutlookIcon from '@icon/outlook-color.svg';
 import DesktopIcon from '@icon/system/regular/desktop.svg';
+import EnvelopeIcon from '@icon/system/regular/envelope.svg';
 import { useOutlookAvailable } from '@queries/auth/outlook-link';
 import { useUserTeamsQuery } from '@queries/team/teams';
 import type { Team as TeamSummary } from '@service-auth/generated/schemas/team';
@@ -67,7 +70,7 @@ function agentToolStatus(
 }
 
 function emailItem(
-  provider: EmailLink['provider'],
+  provider: EmailProvider,
   links: Accessor<EmailLink[]>,
   actions: IntegrationItem['Actions']
 ): IntegrationItem {
@@ -102,7 +105,9 @@ function emailItem(
 /**
  * Gmail and Outlook, one row per provider; accounts are managed in Email
  * settings. Outlook shows when the server offers it to this user, or to manage
- * Outlook inboxes already connected.
+ * Outlook inboxes already connected. Generic (JMAP and IMAP) mailboxes get one
+ * "Other mailboxes" row, shown only while one is connected: they are added by
+ * an operator tool for now, so the row only manages them.
  */
 export function useEmailItems(
   hosts: IntegrationItemHosts
@@ -112,16 +117,14 @@ export function useEmailItems(
   const multiInbox = useFeatureFlag(enableMultiInbox);
   const outlookOffered = useOutlookAvailable();
   const links = () => (query.isSuccess ? query.data.links : []);
-  const linksFor = (provider: EmailLink['provider']) =>
-    links().filter((link) =>
-      provider === 'OUTLOOK'
-        ? link.provider === 'OUTLOOK'
-        : link.provider !== 'OUTLOOK'
-    );
+  const linksFor = (provider: EmailProvider) =>
+    links().filter((link) => link.provider === provider);
+  const otherLinks = () =>
+    links().filter((link) => !isOAuthProvider(link.provider));
   // Further inboxes are behind multi-inbox; the first is always offered.
   const canAdd = () => links().length === 0 || multiInbox().enabled;
 
-  const actionsFor = (provider: EmailLink['provider']) => () => (
+  const actionsFor = (provider: EmailProvider) => () => (
     <>
       <Show when={canAdd() && (provider !== 'OUTLOOK' || outlookOffered())}>
         <ConnectAction
@@ -154,10 +157,36 @@ export function useEmailItems(
     () => linksFor('OUTLOOK'),
     actionsFor('OUTLOOK')
   );
-  return () =>
-    outlookOffered() || linksFor('OUTLOOK').length > 0
-      ? [gmail, outlook]
-      : [gmail];
+  const other: IntegrationItem = {
+    id: 'other-mailboxes',
+    name: 'Other mailboxes',
+    kind: 'native',
+    icon: <EnvelopeIcon />,
+    get description() {
+      return otherLinks()
+        .map((link) => link.email_address)
+        .join(', ');
+    },
+    categories: ['Email'],
+    status: 'connected',
+    get statusLabel() {
+      return otherLinks().length > 1
+        ? `${otherLinks().length} accounts`
+        : undefined;
+    },
+    Actions: () => (
+      <ConnectAction
+        label="Manage"
+        variant="neutral"
+        onClick={hosts.onOpenEmailSettings}
+      />
+    ),
+  };
+  return () => [
+    gmail,
+    ...(outlookOffered() || linksFor('OUTLOOK').length > 0 ? [outlook] : []),
+    ...(otherLinks().length > 0 ? [other] : []),
+  ];
 }
 
 /**

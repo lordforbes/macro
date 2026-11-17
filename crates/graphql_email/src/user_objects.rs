@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use async_graphql::{ComplexObject, Enum, ErrorExtensions, ID, SimpleObject};
 use email::domain::models::{
-    EmailSyncStatus, LabelListVisibility, LabelType, LinkLabel, MessageListVisibility,
-    UserEmailLink, UserEmailLinkSettings, UserProvider,
+    EmailSyncStatus, LabelListVisibility, LabelType, LinkLabel, MailboxCapabilities,
+    MessageListVisibility, UserEmailLink, UserEmailLinkSettings, UserProvider,
 };
 use email::domain::ports::EmailUserService;
 use macro_user_id::user_id::MacroUserIdStr;
@@ -155,6 +155,57 @@ impl From<UserEmailLinkSettings> for GraphqlEmailLinkSettings {
     }
 }
 
+/// What an inbox's provider lets Macro do. Clients hide or disable the
+/// controls of a feature that is false; the server refuses it regardless.
+#[derive(SimpleObject)]
+pub struct GraphqlMailboxCapabilities {
+    /// Send mail and replies.
+    send: bool,
+    /// Change read, starred and folder state (archive, trash, move).
+    organize: bool,
+    /// Keep drafts on the server.
+    drafts: bool,
+    /// The server pushes changes; otherwise Macro polls.
+    push: bool,
+    /// Sync the provider's address book.
+    contacts: bool,
+    /// Block senders through server-side rules.
+    sender_rules: bool,
+    /// Labels, categories or tags beyond folders.
+    tags: bool,
+    /// The provider's calendar.
+    calendar: bool,
+    /// The server groups messages into threads; otherwise Macro does.
+    server_threads: bool,
+}
+
+impl From<MailboxCapabilities> for GraphqlMailboxCapabilities {
+    fn from(capabilities: MailboxCapabilities) -> Self {
+        let MailboxCapabilities {
+            send,
+            organize,
+            drafts,
+            push,
+            contacts,
+            sender_rules,
+            tags,
+            calendar,
+            server_threads,
+        } = capabilities;
+        Self {
+            send,
+            organize,
+            drafts,
+            push,
+            contacts,
+            sender_rules,
+            tags,
+            calendar,
+            server_threads,
+        }
+    }
+}
+
 /// Enriched email link accessible to the authenticated user.
 #[derive(SimpleObject)]
 #[graphql(name = "GraphqlEmailLink", complex)]
@@ -177,6 +228,8 @@ pub struct GraphqlEmailLink<S: EmailUserService> {
     photo_url: Option<String>,
     /// Email provider.
     provider: GraphqlEmailProvider,
+    /// What the provider lets Macro do with this inbox.
+    capabilities: GraphqlMailboxCapabilities,
     /// Whether ongoing provider synchronization is enabled.
     is_sync_active: bool,
     /// Coarse synchronization state derived by the email domain.
@@ -212,6 +265,7 @@ impl<S: EmailUserService> GraphqlEmailLink<S> {
             email_address: link.email_address.0.as_ref().to_owned(),
             photo_url: link.photo_url,
             provider: link.provider.into(),
+            capabilities: link.provider.capabilities().into(),
             is_sync_active: link.is_sync_active,
             sync_status: link.sync_status.into(),
             needs_reauth: link.needs_reauth,

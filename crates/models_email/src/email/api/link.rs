@@ -94,6 +94,31 @@ impl From<crate::email::service::link::UserProvider> for UserProvider {
     }
 }
 
+/// What an inbox's provider lets Macro do. Clients hide or disable the
+/// controls of a feature that is false; the server refuses it regardless.
+/// The email domain's `MailboxCapabilities` decides these values.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
+pub struct MailboxCapabilities {
+    /// Send mail and replies.
+    pub send: bool,
+    /// Change read, starred and folder state (archive, trash, move).
+    pub organize: bool,
+    /// Keep drafts on the server.
+    pub drafts: bool,
+    /// The server pushes changes; otherwise Macro polls.
+    pub push: bool,
+    /// Sync the provider's address book.
+    pub contacts: bool,
+    /// Block senders through server-side rules.
+    pub sender_rules: bool,
+    /// Labels, categories or tags beyond folders.
+    pub tags: bool,
+    /// The provider's calendar.
+    pub calendar: bool,
+    /// The server groups messages into threads; otherwise Macro does.
+    pub server_threads: bool,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct Link {
     pub id: Uuid,
@@ -105,6 +130,8 @@ pub struct Link {
     /// The inbox's own profile photo (its self-contact's SFS photo), if synced.
     pub photo_url: Option<String>,
     pub provider: UserProvider,
+    /// What the provider lets Macro do with this inbox.
+    pub capabilities: MailboxCapabilities,
     pub is_sync_active: bool,
     pub sync_status: SyncStatus,
     /// Whether the link's Google grant needs to be reconnected. Drives the
@@ -137,6 +164,7 @@ impl Link {
         source: service::link::Link,
         settings: Settings,
         sync_status: SyncStatus,
+        capabilities: MailboxCapabilities,
         photo_url: Option<String>,
         needs_calendar_permission: bool,
         calendar_disabled: bool,
@@ -149,6 +177,7 @@ impl Link {
             email_address: source.email_address,
             photo_url,
             provider: UserProvider::from(source.provider),
+            capabilities,
             is_sync_active: source.is_sync_active,
             sync_status,
             needs_reauth: source.needs_reauth,

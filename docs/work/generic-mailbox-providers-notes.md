@@ -24,10 +24,16 @@ Widen the four read-path queries; add EmailApiError::Unsupported and MailboxCapa
 
 1. Done in Rust (17 Nov): Jmap and Imap in all six Rust provider enums (the sixth is `DbUserProvider` in crates/email/src/outbound/email_pg_repo/db_types.rs), migration 20261116233821 (ADD VALUE IF NOT EXISTS, like the other recent enum migrations; Postgres allows it in a transaction as long as the value isn't used there), every exhaustive arm, strict text conversions, `EmailApiError::Unsupported { capability }` with a `MailboxCapability` enum (HTTP 422), regenerated .sqlx, GraphQL SDL, OpenAPI, SDK and web GraphQL types. Still open: 15 web type errors where the UI assumes Gmail-or-Outlook (prompts, calendar, compose); they need item 3's UI decisions.
 2. Done (17 Nov): `email_generic_mailbox_bindings` + `crates/generic_mailbox_credentials`, sealed under the existing Microsoft token KMS key (Chris chose reuse over a new key; envelope scheme, because that key's IAM grant is GenerateDataKey + Decrypt only). Internal auth routes, client methods, email-domain connect (inactive link, cleanup on failure) and the `connect_generic_mailbox` CLI. See design note section 7. Not yet run end to end: needs a local auth service with KMS.
-3. MailboxCapabilities on the link (GraphQL + REST) and EmailApiError::Unsupported; frontend disabled states for write controls when capabilities say so.
+3. Done (17 Nov): `MailboxCapabilities` decided by `email::domain::models::UserProvider::capabilities()`, on the link in GraphQL (`capabilities`) and REST (`Link.capabilities`). Web, per the agreed proposal (mobile too): generic inboxes stay out of the compose From lists, never get Google/Microsoft reconnect or calendar prompts, show a neutral icon, protocol label and "Read-only" chip in Settings › Email, and have their own "Other mailboxes" row in Connections (Manage only). Web type-check and Biome pass.
+   Phase 2 preconditions, before any generic link is activated: (a) refuse every write server-side for links without the capability (send, drafts, scheduled send, thread label/read/archive/trash/move, sender block); today those paths route anything not OUTLOOK down the Gmail path. (b) Disable the thread write controls in the web app (row actions, hotkeys, detail view, bulk actions, AI email tools) from `capabilities.organize`/`send`; show disabled, not hidden, on desktop and mobile.
 4. Thread synthesis module from Message-ID / In-Reply-To / References, with tests.
 5. Read-only safety test harness (snapshot server state before/after a sync).
 6. Feature flags outbound-jmap / outbound-imap default off (already declared in email_api_client/Cargo.toml).
+
+- Web unit tests (vitest) crash with SIGILL on these CPUs under both Bun and Node: a native module in the toolchain needs AVX2. `bunx` also resolves to the Nix (AVX2) Bun; use `bun x`. Type-check with `bun ../../node_modules/typescript-native/bin/tsc --noEmit --skipLibCheck --project tsconfig.json` from apps/web.
+- `gen-api` with `OPENAPI_BINS_DIR` skips its build: build the binaries first with `cargo build $(bun scripts/generate-api-schema.ts --print-cargo-bins)`.
+- The build directory grew to about 160 GB and filled the disk on 17 Nov; it was deleted with Chris's approval. Watch `df -h /` before long builds, and avoid needless feature-set permutations (each `--all-features` combination is a separate build).
+- `macro.service` has been failed since 16 Nov 17:28 UTC: FusionAuth asks for `--fresh` (destructive; Chris's call). Postgres stays up.
 
 ## Repo rules that bite
 

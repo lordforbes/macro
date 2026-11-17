@@ -22,11 +22,13 @@ import {
 } from '@core/email-link/consent';
 import { OutlookBetaBadge } from '@core/email-link/OutlookBetaBadge';
 import type { EmailProvider } from '@core/email-link/ProviderDialog';
+import { hasOAuthProvider, isOAuthProvider } from '@core/email-link/provider';
 import { fireAndForget } from '@core/util/fireAndForget';
 import GmailIcon from '@icon/gmail-color.svg';
 import OutlookIcon from '@icon/outlook-color.svg';
 import ArrowsClockwiseIcon from '@icon/system/regular/arrows-clockwise.svg?component-solid';
 import CalendarSlashIcon from '@icon/system/regular/calendar-slash.svg?component-solid';
+import EnvelopeIcon from '@icon/system/regular/envelope.svg';
 import { Telemetry } from '@macro-inc/observability';
 import {
   fetchEmailConnectionProviders,
@@ -38,6 +40,7 @@ import {
   getBackfillProgress,
 } from '@queries/email/backfill';
 import { useRemoveInboxMutation } from '@queries/email/link';
+import type { ConsentScopes } from '@service-auth/client';
 import {
   type Link as EmailLink,
   SyncStatus,
@@ -98,6 +101,20 @@ export function EmailCard(props: { class?: string } = {}) {
   const { query: emailLinksQuery, resyncInbox } = useEmailLinks();
   const emailActive = useEmailLinksStatus();
   const startAddInbox = useAddInboxFlow();
+  // Reconnecting and calendar consent sign in with Google or Microsoft, so
+  // they never start for a generic (JMAP or IMAP) mailbox.
+  const reconsent = (link: EmailLink, scopes: ConsentScopes) => {
+    if (!hasOAuthProvider(link)) return;
+    fireAndForget(
+      startAddInbox({
+        scopes,
+        provider: link.provider,
+        reconnectLinkId: link.id,
+        emailAddress: link.email_address,
+      }),
+      'add-inbox'
+    );
+  };
 
   const removeInboxMutation = useRemoveInboxMutation({
     onSuccess: (_data, linkId) => {
@@ -175,26 +192,10 @@ export function EmailCard(props: { class?: string } = {}) {
                 resyncing={resyncingIds().has(primary().id)}
                 onResync={() => handleResyncInbox(primary().id)}
                 onReconnect={() =>
-                  fireAndForget(
-                    startAddInbox({
-                      scopes: reconnectScopes(primary()),
-                      provider: primary().provider,
-                      reconnectLinkId: primary().id,
-                      emailAddress: primary().email_address,
-                    }),
-                    'add-inbox'
-                  )
+                  reconsent(primary(), reconnectScopes(primary()))
                 }
                 onEnableCalendar={() =>
-                  fireAndForget(
-                    startAddInbox({
-                      scopes: calendarConsentScopes(primary()),
-                      provider: primary().provider,
-                      reconnectLinkId: primary().id,
-                      emailAddress: primary().email_address,
-                    }),
-                    'add-inbox'
-                  )
+                  reconsent(primary(), calendarConsentScopes(primary()))
                 }
                 onRemove={() =>
                   setRemoveTarget({
@@ -226,27 +227,9 @@ export function EmailCard(props: { class?: string } = {}) {
                 isOwn={link.macro_id === userId()}
                 resyncing={resyncingIds().has(link.id)}
                 onResync={() => handleResyncInbox(link.id)}
-                onReconnect={() =>
-                  fireAndForget(
-                    startAddInbox({
-                      scopes: reconnectScopes(link),
-                      provider: link.provider,
-                      reconnectLinkId: link.id,
-                      emailAddress: link.email_address,
-                    }),
-                    'add-inbox'
-                  )
-                }
+                onReconnect={() => reconsent(link, reconnectScopes(link))}
                 onEnableCalendar={() =>
-                  fireAndForget(
-                    startAddInbox({
-                      scopes: calendarConsentScopes(link),
-                      provider: link.provider,
-                      reconnectLinkId: link.id,
-                      emailAddress: link.email_address,
-                    }),
-                    'add-inbox'
-                  )
+                  reconsent(link, calendarConsentScopes(link))
                 }
                 onRemove={() =>
                   setRemoveTarget({
@@ -462,9 +445,14 @@ function ProviderIcon(props: { provider: EmailLink['provider'] }) {
       aria-hidden="true"
       class="flex size-9 shrink-0 items-center justify-center [&_svg]:size-6"
     >
-      <Show when={props.provider === 'OUTLOOK'} fallback={<GmailIcon />}>
-        <OutlookIcon />
-      </Show>
+      <Switch fallback={<EnvelopeIcon />}>
+        <Match when={props.provider === 'OUTLOOK'}>
+          <OutlookIcon />
+        </Match>
+        <Match when={props.provider === 'GMAIL'}>
+          <GmailIcon />
+        </Match>
+      </Switch>
     </span>
   );
 }
@@ -497,14 +485,29 @@ function InboxRow(props: {
               <Chip label="Shared" />
             </Show>
           </div>
+          <Switch>
+            <Match when={props.link.provider === 'OUTLOOK'}>
+              <span class="flex items-center gap-2 text-xs text-ink-muted">
+                Outlook / Microsoft 365
+                <OutlookBetaBadge />
+              </span>
+            </Match>
+            <Match when={props.link.provider === 'GMAIL'}>
+              <span class="text-xs text-ink-muted">Gmail</span>
+            </Match>
+            <Match when={props.link.provider === 'JMAP'}>
+              <span class="text-xs text-ink-muted">JMAP</span>
+            </Match>
+            <Match when={props.link.provider === 'IMAP'}>
+              <span class="text-xs text-ink-muted">IMAP</span>
+            </Match>
+          </Switch>
           <Show
-            when={props.link.provider === 'OUTLOOK'}
-            fallback={<span class="text-xs text-ink-muted">Gmail</span>}
+            when={
+              !props.link.capabilities.send && !props.link.capabilities.organize
+            }
           >
-            <span class="flex items-center gap-2 text-xs text-ink-muted">
-              Outlook / Microsoft 365
-              <OutlookBetaBadge />
-            </span>
+            <Chip label="Read-only" />
           </Show>
           <Show when={ENABLE_INBOX_SYNC_STATUS}>
             <Switch
@@ -538,7 +541,11 @@ function InboxRow(props: {
           </Show>
         </div>
         <div class="flex max-w-full flex-wrap items-center gap-2 shrink-0">
-          <Show when={props.link.needs_reauth}>
+          <Show
+            when={
+              props.link.needs_reauth && isOAuthProvider(props.link.provider)
+            }
+          >
             <Button
               variant="primary"
               size="md"
@@ -551,7 +558,11 @@ function InboxRow(props: {
           {/* Explicitly enabling calendar also restores mailbox access when
               the Google grant has expired. */}
           <Show
-            when={calendarUiEnabled() && props.link.needs_calendar_permission}
+            when={
+              calendarUiEnabled() &&
+              props.link.capabilities.calendar &&
+              props.link.needs_calendar_permission
+            }
           >
             <Button
               variant="secondary"
@@ -571,6 +582,7 @@ function InboxRow(props: {
             when={
               calendarUiEnabled() &&
               props.isOwn &&
+              props.link.capabilities.calendar &&
               (!props.link.needs_calendar_permission ||
                 props.link.has_calendar_data)
             }

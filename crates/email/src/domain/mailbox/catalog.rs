@@ -1,7 +1,9 @@
 //! One provider-neutral inbox catalog for connection and feature state.
 
 use super::*;
-use crate::domain::models::{EmailBackfillStatus, EmailSyncStatus};
+use crate::domain::models::{
+    EmailBackfillStatus, EmailSyncStatus, MailboxCapabilities, UserProvider as DomainProvider,
+};
 use macro_user_id::user_id::MacroUserIdStr;
 use models_email::service::{
     link::{Link, UserProvider},
@@ -21,6 +23,8 @@ pub struct InboxCatalogEntry {
     pub facts: InboxCatalogFacts,
     pub sync_status: EmailSyncStatus,
     pub needs_calendar_permission: bool,
+    /// What the inbox's provider lets Macro do.
+    pub capabilities: MailboxCapabilities,
 }
 pub trait InboxCatalogRepository: Send + Sync + 'static {
     fn accessible_details(
@@ -84,7 +88,15 @@ impl<R: InboxCatalogRepository> InboxCatalogService<R> {
                     }
                     UserProvider::Jmap | UserProvider::Imap => false,
                 };
+                let capabilities = match facts.link.provider {
+                    UserProvider::Gmail => DomainProvider::Gmail,
+                    UserProvider::Outlook => DomainProvider::Outlook,
+                    UserProvider::Jmap => DomainProvider::Jmap,
+                    UserProvider::Imap => DomainProvider::Imap,
+                }
+                .capabilities();
                 InboxCatalogEntry {
+                    capabilities,
                     needs_calendar_permission,
                     sync_status,
                     facts,

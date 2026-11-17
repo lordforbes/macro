@@ -1,4 +1,4 @@
-use super::{EmailBackfillStatus, EmailSyncStatus};
+use super::{EmailBackfillStatus, EmailSyncStatus, UserProvider};
 
 #[test]
 fn inactive_sync_takes_precedence_over_other_facts() {
@@ -40,4 +40,30 @@ fn backfill_status_maps_to_the_user_facing_sync_state() {
         EmailSyncStatus::derive(true, false, None),
         EmailSyncStatus::UpToDate
     );
+}
+
+#[test]
+fn generic_mailboxes_allow_no_writes_while_gmail_and_outlook_keep_everything() {
+    for provider in [UserProvider::Jmap, UserProvider::Imap] {
+        let capabilities = provider.capabilities();
+        assert!(!capabilities.send, "{provider:?}");
+        assert!(!capabilities.organize, "{provider:?}");
+        assert!(!capabilities.drafts, "{provider:?}");
+        assert!(!capabilities.sender_rules, "{provider:?}");
+        assert!(!capabilities.tags, "{provider:?}");
+        assert!(!capabilities.calendar, "{provider:?}");
+    }
+    for provider in [UserProvider::Gmail, UserProvider::Outlook] {
+        let capabilities = provider.capabilities();
+        assert!(
+            capabilities.send
+                && capabilities.organize
+                && capabilities.drafts
+                && capabilities.sender_rules
+                && capabilities.tags
+                && capabilities.calendar
+                && capabilities.contacts,
+            "{provider:?}"
+        );
+    }
 }

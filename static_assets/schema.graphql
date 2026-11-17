@@ -4849,6 +4849,10 @@ type GraphqlEmailLink {
 	"""
 	provider: GraphqlEmailProvider!
 	"""
+	What the provider lets Macro do with this inbox.
+	"""
+	capabilities: GraphqlMailboxCapabilities!
+	"""
 	Whether ongoing provider synchronization is enabled.
 	"""
 	isSyncActive: Boolean!
@@ -6726,6 +6730,49 @@ type GraphqlMailPreviewMessage {
 	Sender photo URL.
 	"""
 	senderPhotoUrl: String
+}
+
+"""
+What an inbox's provider lets Macro do. Clients hide or disable the
+controls of a feature that is false; the server refuses it regardless.
+"""
+type GraphqlMailboxCapabilities {
+	"""
+	Send mail and replies.
+	"""
+	send: Boolean!
+	"""
+	Change read, starred and folder state (archive, trash, move).
+	"""
+	organize: Boolean!
+	"""
+	Keep drafts on the server.
+	"""
+	drafts: Boolean!
+	"""
+	The server pushes changes; otherwise Macro polls.
+	"""
+	push: Boolean!
+	"""
+	Sync the provider's address book.
+	"""
+	contacts: Boolean!
+	"""
+	Block senders through server-side rules.
+	"""
+	senderRules: Boolean!
+	"""
+	Labels, categories or tags beyond folders.
+	"""
+	tags: Boolean!
+	"""
+	The provider's calendar.
+	"""
+	calendar: Boolean!
+	"""
+	The server groups messages into threads; otherwise Macro does.
+	"""
+	serverThreads: Boolean!
 }
 
 """

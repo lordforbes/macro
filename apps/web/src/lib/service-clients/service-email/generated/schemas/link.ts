@@ -4,7 +4,9 @@
  * email_service
  * OpenAPI spec version: 0.1.0
  */
+
 import type { LinkPhotoUrl } from './linkPhotoUrl';
+import type { MailboxCapabilities } from './mailboxCapabilities';
 import type { Settings } from './settings';
 import type { SyncStatus } from './syncStatus';
 import type { UserProvider } from './userProvider';
@@ -15,6 +17,8 @@ its calendar data. `needs_calendar_permission` is true either way, so
 this is what separates "never granted" from "deliberately off" —
 unprompted calendar nags must stay quiet for the latter. */
   calendar_disabled: boolean;
+  /** What the provider lets Macro do with this inbox. */
+  capabilities: MailboxCapabilities;
   created_at: string;
   email_address: string;
   fusionauth_user_id: string;

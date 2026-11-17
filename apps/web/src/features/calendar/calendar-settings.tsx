@@ -4,6 +4,7 @@ import { enableMultiInbox } from '@core/constant/featureFlags';
 import { useUserId } from '@core/context/user';
 import { useAddInboxFlow } from '@core/email-link';
 import { calendarConsentScopes } from '@core/email-link/consent';
+import { hasOAuthProvider } from '@core/email-link/provider';
 import { fireAndForget } from '@core/util/fireAndForget';
 import {
   useAvailabilityCalendarsQuery,
@@ -48,9 +49,10 @@ function CalendarSettingsContent() {
   const [disconnect, setDisconnect] =
     createSignal<TurnOffCalendarTarget | null>(null);
   const ownedLinks = () =>
-    (links.isSuccess ? (links.data?.links ?? []) : []).filter(
-      (l) => l.macro_id === userId()
-    );
+    (links.isSuccess ? (links.data?.links ?? []) : [])
+      // Generic (JMAP and IMAP) mailboxes have no calendar.
+      .filter(hasOAuthProvider)
+      .filter((l) => l.macro_id === userId());
   const accounts = (): ConnectedCalendarAccount[] => {
     const groups = groupCalendarSourcesByAccount(
       sources().filter((s) => s.emailLinkId)

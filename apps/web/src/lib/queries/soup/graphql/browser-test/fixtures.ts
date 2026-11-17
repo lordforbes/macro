@@ -100,6 +100,7 @@ export function response(ids: readonly number[]): SoupQuery {
           isPrimary: true,
           needsReauth: false,
           draftIsSignal: false,
+          capabilities: { send: true },
           settings: { signature: null, signatureOnRepliesForwards: false },
         },
       ],

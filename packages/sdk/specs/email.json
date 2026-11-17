@@ -6522,6 +6522,7 @@
           "fusionauth_user_id",
           "email_address",
           "provider",
+          "capabilities",
           "is_sync_active",
           "sync_status",
           "needs_reauth",
@@ -6537,6 +6538,10 @@
           "calendar_disabled": {
             "type": "boolean",
             "description": "Whether the user turned calendar off for this inbox, which also removed\nits calendar data. `needs_calendar_permission` is true either way, so\nthis is what separates \"never granted\" from \"deliberately off\" —\nunprompted calendar nags must stay quiet for the latter."
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/MailboxCapabilities",
+            "description": "What the provider lets Macro do with this inbox."
           },
           "created_at": {
             "type": "string",
@@ -6782,6 +6787,59 @@
           }
         ],
         "description": "Desired organization state. Categories never stand in for folders or flags."
+      },
+      "MailboxCapabilities": {
+        "type": "object",
+        "description": "What an inbox's provider lets Macro do. Clients hide or disable the\ncontrols of a feature that is false; the server refuses it regardless.\nThe email domain's `MailboxCapabilities` decides these values.",
+        "required": [
+          "send",
+          "organize",
+          "drafts",
+          "push",
+          "contacts",
+          "sender_rules",
+          "tags",
+          "calendar",
+          "server_threads"
+        ],
+        "properties": {
+          "calendar": {
+            "type": "boolean",
+            "description": "The provider's calendar."
+          },
+          "contacts": {
+            "type": "boolean",
+            "description": "Sync the provider's address book."
+          },
+          "drafts": {
+            "type": "boolean",
+            "description": "Keep drafts on the server."
+          },
+          "organize": {
+            "type": "boolean",
+            "description": "Change read, starred and folder state (archive, trash, move)."
+          },
+          "push": {
+            "type": "boolean",
+            "description": "The server pushes changes; otherwise Macro polls."
+          },
+          "send": {
+            "type": "boolean",
+            "description": "Send mail and replies."
+          },
+          "sender_rules": {
+            "type": "boolean",
+            "description": "Block senders through server-side rules."
+          },
+          "server_threads": {
+            "type": "boolean",
+            "description": "The server groups messages into threads; otherwise Macro does."
+          },
+          "tags": {
+            "type": "boolean",
+            "description": "Labels, categories or tags beyond folders."
+          }
+        }
       },
       "MailboxOperation": {
         "type": "object",

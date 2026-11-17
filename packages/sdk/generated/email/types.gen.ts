@@ -1454,6 +1454,10 @@ export type Link = {
      * unprompted calendar nags must stay quiet for the latter.
      */
     calendar_disabled: boolean;
+    /**
+     * What the provider lets Macro do with this inbox.
+     */
+    capabilities: MailboxCapabilities;
     created_at: string;
     email_address: string;
     fusionauth_user_id: string;
@@ -1583,6 +1587,50 @@ export type MailboxAction = {
         name: string;
         present: boolean;
     };
+};
+
+/**
+ * What an inbox's provider lets Macro do. Clients hide or disable the
+ * controls of a feature that is false; the server refuses it regardless.
+ * The email domain's `MailboxCapabilities` decides these values.
+ */
+export type MailboxCapabilities = {
+    /**
+     * The provider's calendar.
+     */
+    calendar: boolean;
+    /**
+     * Sync the provider's address book.
+     */
+    contacts: boolean;
+    /**
+     * Keep drafts on the server.
+     */
+    drafts: boolean;
+    /**
+     * Change read, starred and folder state (archive, trash, move).
+     */
+    organize: boolean;
+    /**
+     * The server pushes changes; otherwise Macro polls.
+     */
+    push: boolean;
+    /**
+     * Send mail and replies.
+     */
+    send: boolean;
+    /**
+     * Block senders through server-side rules.
+     */
+    sender_rules: boolean;
+    /**
+     * The server groups messages into threads; otherwise Macro does.
+     */
+    server_threads: boolean;
+    /**
+     * Labels, categories or tags beyond folders.
+     */
+    tags: boolean;
 };
 
 /**

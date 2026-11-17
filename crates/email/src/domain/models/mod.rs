@@ -36,7 +36,8 @@ pub use label::{
     MessageListVisibility, SetThreadsArchivedResult, StagedLabelChange, UpdateThreadLabelsResult,
 };
 pub use link::{
-    EmailBackfillStatus, EmailInboxDetails, EmailSyncStatus, Link, ResolvedSendingInbox,
+    EmailBackfillStatus, EmailInboxDetails, EmailSyncStatus, Link, MailboxCapabilities,
+    ResolvedSendingInbox,
     SendingInboxRequest, UserEmailLink, UserEmailLinkSettings, UserProvider,
 };
 pub use mail_projection::{

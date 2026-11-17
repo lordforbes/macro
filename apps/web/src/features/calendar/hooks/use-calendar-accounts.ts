@@ -1,5 +1,7 @@
 import { useUserId } from '@core/context/user';
 import { calendarConsentScopes } from '@core/email-link/consent';
+import type { EmailProvider } from '@core/email-link/ProviderDialog';
+import { hasOAuthProvider } from '@core/email-link/provider';
 import { useEmailLinksQuery } from '@queries/email/link';
 import type { ConsentScopes } from '@service-auth/client';
 import type { Link as EmailLink } from '@service-email/generated/schemas';
@@ -11,7 +13,7 @@ type CalendarAccountAction = 'enable' | 'reconnect' | 'turnOff';
 /** A viewer-owned inbox rendered as a manageable calendar account. */
 export interface CalendarAccount {
   linkId: string;
-  provider: EmailLink['provider'];
+  provider: EmailProvider;
   emailAddress: string;
   action: CalendarAccountAction;
   consentScopes: ConsentScopes;
@@ -27,7 +29,8 @@ export interface CalendarAccount {
  * it, and removing the stale data stays available from connection settings.
  *
  * Delegated inboxes are dropped: the viewer reads the owner's calendar but must
- * not enable or delete the owner's calendar from here. The viewer's primary
+ * not enable or delete the owner's calendar from here. Generic (JMAP and IMAP)
+ * mailboxes are dropped too: they have no calendar. The viewer's primary
  * inbox sorts first; the rest keep the links list's order.
  */
 export function toCalendarAccounts(
@@ -35,6 +38,7 @@ export function toCalendarAccounts(
   userId: string | undefined
 ): CalendarAccount[] {
   return links
+    .filter(hasOAuthProvider)
     .filter((link) => link.macro_id === userId)
     .sort((a, b) => Number(b.is_primary) - Number(a.is_primary))
     .map((link) => ({

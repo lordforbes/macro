@@ -32,6 +32,7 @@ import { useFeatureFlag } from '@app/lib/analytics/posthog';
 import { toast } from '@core/component/Toast/Toast';
 import { enableEmailSignatures } from '@core/constant/featureFlags';
 import { useUserId } from '@core/context/user';
+import { hasOAuthProvider } from '@core/email-link/provider';
 import { isMobile } from '@core/mobile/isMobile';
 import { isTouchDevice } from '@core/mobile/isTouchDevice';
 import { fireAndForget } from '@core/util/fireAndForget';
@@ -132,8 +133,12 @@ export function EmailDraftComposer(props: EmailDraftComposerProps) {
   const uiDisabled = () => !props.sink.canAct() || props.readOnly === true;
   const userId = useUserId();
   const emailLinksQuery = useEmailLinksQuery();
+  // Only inboxes that can send: a read-only (JMAP or IMAP) mailbox is never a
+  // sender.
   const inboxes = createMemo(() =>
-    queryReadyGate(emailLinksQuery) ? (emailLinksQuery.data.links ?? []) : []
+    (queryReadyGate(emailLinksQuery) ? (emailLinksQuery.data.links ?? []) : [])
+      .filter((link) => link.capabilities.send)
+      .filter(hasOAuthProvider)
   );
   // Keep the selected address even if its inbox is later disconnected, so
   // edits cannot silently replace an explicit sender.

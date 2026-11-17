@@ -120,6 +120,8 @@ So a capability model is new work, not reuse. Proposal:
 
 For read-only phases a generic mailbox reports every write capability false. The compose, reply, archive, mark-read and trash controls therefore need a disabled state. That is frontend work in Phase 1–2, earlier than the brief's Phase 6 UI item.
 
+Built in Phase 1: the rule is `email::domain::models::UserProvider::capabilities()` (`send`, `organize`, `drafts`, `push`, `contacts`, `sender_rules`, `tags`, `calendar`, `server_threads`); `multi_mailbox_messages` was left out until something reads it. It is exposed as `capabilities` on `GraphqlEmailLink` and on the REST `Link`. The web app keeps generic inboxes out of sender lists, sign-in prompts and calendar views, and labels them read-only in settings. The thread write controls and the server-side refusal of every write path are Phase 2 work, required before a generic link is activated.
+
 ## 7. Link model and credential store
 
 Built in Phase 1 (17 November 2026).

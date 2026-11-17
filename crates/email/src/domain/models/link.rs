@@ -18,7 +18,67 @@ pub enum UserProvider {
     Imap,
 }
 
+/// What a mailbox's provider lets Macro do. The UI hides or disables
+/// controls from this; the domain still refuses unsupported writes itself.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MailboxCapabilities {
+    /// Send mail and replies.
+    pub send: bool,
+    /// Change read, starred and folder state (archive, trash, move).
+    pub organize: bool,
+    /// Keep drafts on the server.
+    pub drafts: bool,
+    /// The server pushes changes; otherwise Macro polls.
+    pub push: bool,
+    /// Sync the provider's address book.
+    pub contacts: bool,
+    /// Block senders through server-side rules.
+    pub sender_rules: bool,
+    /// Labels, categories or tags beyond folders.
+    pub tags: bool,
+    /// The provider's calendar.
+    pub calendar: bool,
+    /// The server groups messages into threads; otherwise Macro does.
+    pub server_threads: bool,
+}
+
 impl UserProvider {
+    /// What this provider supports. Gmail and Outlook support everything
+    /// Macro offers. Generic mailboxes are read-only until sending and
+    /// write-back are built; JMAP servers report threads, IMAP servers don't.
+    pub fn capabilities(self) -> MailboxCapabilities {
+        let everything = MailboxCapabilities {
+            send: true,
+            organize: true,
+            drafts: true,
+            push: true,
+            contacts: true,
+            sender_rules: true,
+            tags: true,
+            calendar: true,
+            server_threads: true,
+        };
+        let read_only = MailboxCapabilities {
+            send: false,
+            organize: false,
+            drafts: false,
+            push: false,
+            contacts: false,
+            sender_rules: false,
+            tags: false,
+            calendar: false,
+            server_threads: false,
+        };
+        match self {
+            UserProvider::Gmail | UserProvider::Outlook => everything,
+            UserProvider::Jmap => MailboxCapabilities {
+                server_threads: true,
+                ..read_only
+            },
+            UserProvider::Imap => read_only,
+        }
+    }
+
     pub fn as_str(&self) -> &'static str {
         match self {
             UserProvider::Gmail => "GMAIL",

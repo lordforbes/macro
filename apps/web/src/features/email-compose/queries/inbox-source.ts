@@ -1,3 +1,4 @@
+import { hasOAuthProvider } from '@core/email-link/provider';
 import type { useMailAccountsQuery } from '@queries/email/mail-accounts';
 import { type Accessor, createMemo } from 'solid-js';
 import type { EmailInbox } from '../context/compose-capabilities';
@@ -25,19 +26,24 @@ export function createEmailInboxSource(
         owner: id,
         inboxes: previous && previous.owner === id ? previous.inboxes : [],
       };
-    const inboxes = (query.data?.links ?? []).map((inbox) => ({
-      id: inbox.id,
-      provider: inbox.provider,
-      email_address: inbox.email_address,
-      photo_url: inbox.photo_url,
-      sendAs: inbox.sendAs,
-      displayName: displayName(inbox.email_address),
-      settings: {
-        signature: inbox.settings.signature,
-        signature_on_replies_forwards:
-          inbox.settings.signature_on_replies_forwards,
-      },
-    }));
+    // Only inboxes that can send: a read-only (JMAP or IMAP) mailbox is never
+    // a sender.
+    const inboxes = (query.data?.links ?? [])
+      .filter((inbox) => inbox.can_send)
+      .filter(hasOAuthProvider)
+      .map((inbox) => ({
+        id: inbox.id,
+        provider: inbox.provider,
+        email_address: inbox.email_address,
+        photo_url: inbox.photo_url,
+        sendAs: inbox.sendAs,
+        displayName: displayName(inbox.email_address),
+        settings: {
+          signature: inbox.settings.signature,
+          signature_on_replies_forwards:
+            inbox.settings.signature_on_replies_forwards,
+        },
+      }));
     return { owner: id, inboxes };
   });
   return {

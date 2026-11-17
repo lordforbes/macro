@@ -68,6 +68,7 @@ export function useMailAccountsQuery(enabled: Accessor<boolean> = () => true) {
           is_primary: link.isPrimary,
           needs_reauth: link.needsReauth,
           draft_is_signal: link.draftIsSignal,
+          can_send: link.capabilities.send,
           sendAs:
             link.sendAs?.map((sender) => ({
               email_address: sender.emailAddress,

@@ -6,6 +6,7 @@ import { t } from '@app/lib/i18n';
 import { useKeyedPersistentToasts } from '@core/component/Toast/useKeyedPersistentToasts';
 import { useUserId } from '@core/context/user';
 import { useAddInboxFlow } from '@core/email-link';
+import { hasOAuthProvider } from '@core/email-link/provider';
 import { fireAndForget } from '@core/util/fireAndForget';
 import CalendarIcon from '@icon/system/regular/calendar.svg';
 import { useEmailLinksQuery } from '@queries/email/link';
@@ -42,13 +43,16 @@ export function CalendarPermissionPrompt() {
   useKeyedPersistentToasts({
     items: () =>
       calendarUiEnabled() && promptAllowed()
-        ? (linksQuery.isSuccess ? linksQuery.data.links : []).filter(
-            (link) =>
-              link.macro_id === userId() &&
-              link.needs_calendar_permission &&
-              !link.needs_reauth &&
-              !link.calendar_disabled
-          )
+        ? (linksQuery.isSuccess ? linksQuery.data.links : [])
+            // Generic mailboxes have no calendar to grant.
+            .filter(hasOAuthProvider)
+            .filter(
+              (link) =>
+                link.macro_id === userId() &&
+                link.needs_calendar_permission &&
+                !link.needs_reauth &&
+                !link.calendar_disabled
+            )
         : [],
     key: (link) => link.id,
     persistKey: 'macro:calendar-prompt:dismissed',

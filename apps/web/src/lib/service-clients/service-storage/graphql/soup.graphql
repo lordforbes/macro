@@ -866,5 +866,6 @@ fragment MailAccountFields on GraphqlEmailLink {
   isPrimary
   needsReauth
   draftIsSignal
+  capabilities { send }
   settings { signature signatureOnRepliesForwards }
 }

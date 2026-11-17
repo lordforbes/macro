@@ -322,6 +322,7 @@ export * from './mailboxActionOneOfSeven';
 export * from './mailboxActionOneOfSevenKind';
 export * from './mailboxActionOneOfThree';
 export * from './mailboxActionOneOfThreeKind';
+export * from './mailboxCapabilities';
 export * from './mailboxOperation';
 export * from './mailboxOperationState';
 export * from './mailboxSettingsChange';

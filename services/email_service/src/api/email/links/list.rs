@@ -69,11 +69,34 @@ pub async fn list_links_handler(
                 }
                 email::domain::models::EmailSyncStatus::Inactive => api::link::SyncStatus::Inactive,
             };
+            let email::domain::models::MailboxCapabilities {
+                send,
+                organize,
+                drafts,
+                push,
+                contacts,
+                sender_rules,
+                tags,
+                calendar,
+                server_threads,
+            } = entry.capabilities;
+            let capabilities = api::link::MailboxCapabilities {
+                send,
+                organize,
+                drafts,
+                push,
+                contacts,
+                sender_rules,
+                tags,
+                calendar,
+                server_threads,
+            };
             let inbox = entry.facts;
             api::link::Link::new(
                 inbox.link,
                 api::settings::Settings::from(inbox.settings),
                 sync_status,
+                capabilities,
                 inbox.photo_url,
                 entry.needs_calendar_permission,
                 inbox.calendar_disabled,
