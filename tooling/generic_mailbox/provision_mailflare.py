@@ -14,8 +14,8 @@ import sys
 import urllib.error
 import urllib.request
 
-BASE = "http://127.0.0.1:3110"
-ORIGIN = "http://localhost:3110"
+BASE = "http://mailflare:3110"
+ORIGIN = "http://mailflare:3110"
 ADDRESS = "reader@example.com"
 COOKIES = {}
 
