@@ -19,13 +19,16 @@ use std::{
 };
 use system_properties::{PgSystemPropertiesRepository, SystemPropertiesServiceImpl};
 
-pub struct ProviderAttachmentBytes<A> {
+pub struct ProviderAttachmentBytes<A, J> {
     pub s3: s3_client::S3,
     pub bucket: String,
     pub gmail: GmailApi,
     pub outlook: A,
+    pub jmap: J,
 }
-impl<A: MailboxAttachmentAccess> AttachmentBytes for ProviderAttachmentBytes<A> {
+impl<A: MailboxAttachmentAccess, J: MailboxAttachmentAccess> AttachmentBytes
+    for ProviderAttachmentBytes<A, J>
+{
     async fn bytes(&self, record: &AttachmentReadRecord) -> Result<Vec<u8>, AttachmentError> {
         if record.attachment.reference_url.is_some() {
             return Err(AttachmentError::Invalid(
@@ -65,12 +68,18 @@ impl<A: MailboxAttachmentAccess> AttachmentBytes for ProviderAttachmentBytes<A> 
                     MailboxError::Provider(e) => provider_error(e),
                     _ => AttachmentError::Infrastructure,
                 }),
-            // Generic mailbox adapters are not wired into the service yet.
-            UserProvider::Jmap | UserProvider::Imap => {
-                Err(provider_error(EmailApiError::Unsupported {
-                    capability: MailboxCapability::Read,
-                }))
-            }
+            UserProvider::Jmap => self
+                .jmap
+                .download(record.mailbox, &record.message_provider_id, id)
+                .await
+                .map_err(|e| match e {
+                    MailboxError::Provider(e) => provider_error(e),
+                    _ => AttachmentError::Infrastructure,
+                }),
+            // The IMAP adapter does not exist yet.
+            UserProvider::Imap => Err(provider_error(EmailApiError::Unsupported {
+                capability: MailboxCapability::Read,
+            })),
         }
     }
 }

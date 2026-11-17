@@ -1,9 +1,7 @@
 use contacts::domain::ports::ContactsIngress;
 use email::domain::mailbox::{MailboxError, health::*};
 use email_api_client::domain::{
-    models::{
-        AccessToken, EmailApiError, MailboxAccess, MailboxCapability, TokenError, TokenFreshness,
-    },
+    models::{AccessToken, EmailApiError, MailboxAccess, TokenError, TokenFreshness},
     ports::MailboxTokenSource,
 };
 use macro_event_broker::MacroEventBroker;
@@ -82,6 +80,7 @@ impl InboxHealthRepository for PgInboxHealth {
 pub struct ProviderInboxHealth<T, B, C> {
     pub gmail: crate::outbound::email_api::GmailApi,
     pub outlook: T,
+    pub generic: crate::outbound::email_api::GenericCredentialsTokens,
     pub db: sqlx::PgPool,
     pub queue: sqs_client::SQS,
     pub broker: B,
@@ -118,10 +117,25 @@ impl<T: MailboxTokenSource, B: MacroEventBroker, C: ContactsIngress> InboxHealth
                         message: "Microsoft token health is temporarily unavailable".into(),
                     },
                 }),
-            // Generic mailbox credentials are not wired into the service yet.
-            UserProvider::Jmap | UserProvider::Imap => Err(EmailApiError::Unsupported {
-                capability: MailboxCapability::Read,
-            }),
+            // A generic mailbox's credentials are a stored key or password;
+            // a missing one needs the user to connect the mailbox again.
+            UserProvider::Jmap | UserProvider::Imap => self
+                .generic
+                .access_token(
+                    MailboxAccess {
+                        link_id: binding.link.id,
+                        grant_generation: binding.grant_generation,
+                        sync_generation: binding.sync_generation,
+                    },
+                    freshness,
+                )
+                .await
+                .map_err(|error| match error {
+                    TokenError::ReauthRequired => EmailApiError::AuthRequired,
+                    _ => EmailApiError::Transient {
+                        message: "generic mailbox credentials are temporarily unavailable".into(),
+                    },
+                }),
         }
     }
     async fn renew_gmail_watch(

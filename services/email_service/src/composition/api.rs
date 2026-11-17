@@ -188,6 +188,14 @@ pub(crate) async fn api_context(deps: ApiDependencies) -> anyhow::Result<ApiCont
         )
         .with_outlook_writes_enabled(config.outlook_writes_enabled),
     );
+    let jmap_api: crate::outbound::email_api::JmapApi =
+        email_api_client::domain::service::mailbox::MailboxApiService::new(
+            email_api_client::JmapApiClientRepository::new()?,
+            crate::outbound::email_api::GenericCredentialsTokens(
+                auth_service_client.as_ref().clone(),
+            ),
+            email_api_client::domain::ports::AlwaysAllowRateLimiter,
+        );
     let outlook_api: crate::api::context::OutlookApi =
         email_api_client::domain::service::mailbox::MailboxApiService::new(
             email_api_client::OutlookApiClientRepository::with_gate(Arc::new(
@@ -212,6 +220,7 @@ pub(crate) async fn api_context(deps: ApiDependencies) -> anyhow::Result<ApiCont
                     outlook: crate::outbound::email_api::ProviderMailboxGateway(
                         outlook_api.clone(),
                     ),
+                    jmap: crate::outbound::email_api::ProviderMailboxGateway(jmap_api.clone()),
                 },
                 s3: s3_client.clone(),
                 bucket: config.attachment_bucket.to_string(),
@@ -367,6 +376,7 @@ pub(crate) async fn api_context(deps: ApiDependencies) -> anyhow::Result<ApiCont
             crate::outbound::recent_inbox::ProviderRecentInbox {
                 gmail: email_api.clone(),
                 outlook: outlook_api.clone(),
+                jmap: jmap_api.clone(),
             },
         )),
         message_sources: Arc::new(email::domain::message_source::MessageSourceService {
@@ -374,6 +384,7 @@ pub(crate) async fn api_context(deps: ApiDependencies) -> anyhow::Result<ApiCont
             provider: crate::outbound::message_source::ProviderMessageSource {
                 gmail: email_api.clone(),
                 outlook: outlook_api.clone(),
+                jmap: jmap_api.clone(),
             },
             access: entity_access_service.as_ref().clone(),
         }),
@@ -384,6 +395,7 @@ pub(crate) async fn api_context(deps: ApiDependencies) -> anyhow::Result<ApiCont
                 bucket: config.attachment_bucket.to_string(),
                 gmail: email_api.clone(),
                 outlook: crate::outbound::email_api::ProviderMailboxGateway(outlook_api),
+                jmap: crate::outbound::email_api::ProviderMailboxGateway(jmap_api),
             },
             files: crate::outbound::attachment_access::MailAttachmentFiles {
                 db: db.clone(),

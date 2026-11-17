@@ -92,6 +92,11 @@ pub(crate) type AttachmentReadSvc = email::domain::attachment_access::Attachment
             MicrosoftTokens,
             email_api_client::domain::ports::AlwaysAllowRateLimiter,
         >,
+        crate::outbound::email_api::ProviderMailboxGateway<
+            email_api_client::JmapApiClientRepository,
+            crate::outbound::email_api::GenericCredentialsTokens,
+            email_api_client::domain::ports::AlwaysAllowRateLimiter,
+        >,
     >,
     crate::outbound::attachment_access::MailAttachmentFiles,
     EmailEntityAccessService,

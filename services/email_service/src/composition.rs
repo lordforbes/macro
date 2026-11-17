@@ -64,6 +64,7 @@ pub fn inbox_health(
         },
         ProviderInboxHealth {
             gmail,
+            generic: crate::outbound::email_api::GenericCredentialsTokens(auth.clone()),
             outlook: MicrosoftTokens::new(
                 PgMailboxSync::new(db.clone()),
                 MicrosoftCredentialsClient(auth),

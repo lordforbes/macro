@@ -38,6 +38,10 @@ impl GenericLinkRepository for FakeLinks {
         self.deleted.lock().unwrap().push(id);
         Ok(())
     }
+
+    async fn activate(&self, _id: Uuid) -> Result<bool, TestError> {
+        Ok(false)
+    }
 }
 
 #[derive(Default)]

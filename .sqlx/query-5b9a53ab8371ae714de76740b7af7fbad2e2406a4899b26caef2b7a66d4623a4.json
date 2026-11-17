@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE email_links SET is_sync_active = true, updated_at = now()\n            WHERE id = $1 AND provider IN ('JMAP', 'IMAP') AND NOT is_sync_active\n                AND disconnect_requested_at IS NULL\n            RETURNING sync_generation\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "sync_generation",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "5b9a53ab8371ae714de76740b7af7fbad2e2406a4899b26caef2b7a66d4623a4"
+}

@@ -16,6 +16,7 @@ use models_email::service::link::UserProvider;
 pub struct ProviderMessageSource<R, T, L> {
     pub gmail: GmailApi,
     pub outlook: MailboxApiService<R, T, L>,
+    pub jmap: super::email_api::JmapApi,
 }
 impl<R, T, L> MessageSourceBytes for ProviderMessageSource<R, T, L>
 where
@@ -45,12 +46,25 @@ where
                     .await
                     .map_err(provider_error)
             }
-            // Generic mailbox adapters are not wired into the service yet.
-            UserProvider::Jmap | UserProvider::Imap => {
-                Err(provider_error(EmailApiError::Unsupported {
-                    capability: MailboxCapability::Read,
-                }))
+            UserProvider::Jmap => {
+                let message = ProviderId::new(record.message_provider_id.clone())
+                    .map_err(|_| AttachmentError::NotFound)?;
+                self.jmap
+                    .mime(
+                        MailboxAccess {
+                            link_id: record.mailbox.link_id,
+                            sync_generation: record.mailbox.sync_generation,
+                            grant_generation: record.mailbox.grant_generation,
+                        },
+                        &message,
+                    )
+                    .await
+                    .map_err(provider_error)
             }
+            // The IMAP adapter does not exist yet.
+            UserProvider::Imap => Err(provider_error(EmailApiError::Unsupported {
+                capability: MailboxCapability::Read,
+            })),
         }
     }
 }

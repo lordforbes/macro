@@ -51,6 +51,10 @@ pub trait GenericLinkRepository: Send + Sync + 'static {
 
     /// Remove a link this service created whose credentials could not be stored.
     fn delete_link(&self, id: Uuid) -> impl Future<Output = Result<(), Self::Err>> + Send;
+
+    /// Mark an inactive generic link active and queue its first folder
+    /// discovery. False when there is no such link to activate.
+    fn activate(&self, id: Uuid) -> impl Future<Output = Result<bool, Self::Err>> + Send;
 }
 
 /// Where credentials are kept: the authentication service.
@@ -66,9 +70,12 @@ pub trait GenericCredentialStore: Send + Sync + 'static {
     ) -> impl Future<Output = Result<(), Self::Err>> + Send;
 }
 
-/// Why a mailbox could not be connected.
+/// Why a mailbox could not be connected or activated.
 #[derive(Debug, thiserror::Error)]
 pub enum GenericConnectionError {
+    /// No inactive generic link with this id exists.
+    #[error("no generic mailbox to activate")]
+    NotFound,
     /// The owner already connected this mailbox.
     #[error("this mailbox is already connected")]
     AlreadyConnected,
@@ -126,6 +133,18 @@ impl<R: GenericLinkRepository, C: GenericCredentialStore> GenericConnectionServi
             return Err(unavailable(error));
         }
         Ok(id)
+    }
+}
+
+impl<R: GenericLinkRepository, C> GenericConnectionService<R, C> {
+    /// Start syncing a connected mailbox: the link becomes active and the
+    /// shared mailbox engine discovers its folders.
+    #[tracing::instrument(name = "generic_mailbox.activate", skip(self), err)]
+    pub async fn activate(&self, link_id: Uuid) -> Result<(), GenericConnectionError> {
+        match self.links.activate(link_id).await.map_err(unavailable)? {
+            true => Ok(()),
+            false => Err(GenericConnectionError::NotFound),
+        }
     }
 }
 

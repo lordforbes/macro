@@ -84,3 +84,45 @@ async fn cleanup_removes_only_an_inactive_generic_link(pool: PgPool) {
     .unwrap();
     assert_eq!(remaining, vec![gmail]);
 }
+
+#[sqlx::test(migrator = "MACRO_DB_MIGRATIONS")]
+async fn activation_starts_folder_discovery_once(pool: PgPool) {
+    let repo = PgMailboxSync::new(pool.clone());
+    let id = Uuid::now_v7();
+    repo.create_inactive_link(id, &request("box@example.com"), UserProvider::Jmap)
+        .await
+        .unwrap();
+
+    let first = repo.activate(id).await.unwrap();
+    let again = repo.activate(id).await.unwrap();
+
+    assert!(first);
+    assert!(!again, "an active link is not activated twice");
+    let row = sqlx::query!(
+        r#"SELECT l.is_sync_active, (SELECT count(*) FROM email_sync_streams s
+            WHERE s.link_id = l.id AND s.kind = 'folder_catalog' AND s.generation = l.sync_generation) AS "streams!"
+        FROM email_links l WHERE l.id = $1"#,
+        id
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert!(row.is_sync_active);
+    assert_eq!(row.streams, 1);
+}
+
+#[sqlx::test(migrator = "MACRO_DB_MIGRATIONS")]
+async fn activation_never_touches_a_gmail_link(pool: PgPool) {
+    let repo = PgMailboxSync::new(pool.clone());
+    let gmail = Uuid::now_v7();
+    sqlx::query!(
+        r#"INSERT INTO email_links (id, macro_id, fusionauth_user_id, email_address, provider, is_sync_active)
+        VALUES ($1, 'macro|owner@example.com', 'fusionauth-owner', 'gmail@example.com', 'GMAIL', false)"#,
+        gmail
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    assert!(!repo.activate(gmail).await.unwrap());
+}

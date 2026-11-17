@@ -45,6 +45,40 @@ impl GenericLinkRepository for PgMailboxSync {
         })
     }
 
+    async fn activate(&self, id: Uuid) -> Result<bool, MailboxError> {
+        let mut tx = self.db.begin().await.map_err(db_error)?;
+        let generation = sqlx::query_scalar!(
+            r#"
+            UPDATE email_links SET is_sync_active = true, updated_at = now()
+            WHERE id = $1 AND provider IN ('JMAP', 'IMAP') AND NOT is_sync_active
+                AND disconnect_requested_at IS NULL
+            RETURNING sync_generation
+            "#,
+            id,
+        )
+        .fetch_optional(&mut *tx)
+        .await
+        .map_err(db_error)?;
+        let Some(generation) = generation else {
+            return Ok(false);
+        };
+        // The engine's folder discovery creates a stream per folder from here.
+        sqlx::query!(
+            r#"
+            INSERT INTO email_sync_streams (id, link_id, generation, kind, scope_id)
+            VALUES ($1, $2, $3, 'folder_catalog', 'mail') ON CONFLICT DO NOTHING
+            "#,
+            macro_uuid::generate_uuid_v7(),
+            id,
+            generation,
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(db_error)?;
+        tx.commit().await.map_err(db_error)?;
+        Ok(true)
+    }
+
     async fn delete_link(&self, id: Uuid) -> Result<(), MailboxError> {
         // Only an inactive generic link: never a link that has started syncing.
         sqlx::query!(

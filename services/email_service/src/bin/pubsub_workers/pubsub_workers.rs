@@ -309,12 +309,25 @@ async fn main() -> anyhow::Result<()> {
         // Admission is applied to each actual Graph request by the injected gate.
         email_api_client::domain::ports::AlwaysAllowRateLimiter,
     );
+    // Generic (JMAP) mailboxes run on the same engine. Their credentials come
+    // from the authentication service per use; the JMAP server applies its own
+    // limits, so no request gate is attached.
+    let jmap_api = email_api_client::domain::service::mailbox::MailboxApiService::new(
+        email_api_client::JmapApiClientRepository::new()?,
+        email_service::outbound::email_api::GenericCredentialsTokens(auth_service_client.clone()),
+        email_api_client::domain::ports::AlwaysAllowRateLimiter,
+    );
+    let routed_gateway = || email_service::outbound::email_api::RoutedMailboxGateway {
+        outlook: email_service::outbound::email_api::ProviderMailboxGateway(outlook_api.clone()),
+        jmap: email_service::outbound::email_api::ProviderMailboxGateway(jmap_api.clone()),
+        providers: email_service::outbound::email_api::LinkProviders::new(db.clone()),
+    };
     let mailbox_repository = email::outbound::mailbox_pg::PgMailboxSync::new(db.clone())
         .with_imports_paused(config.outlook_imports_paused);
     if config.outlook_sync_enabled {
         let mailbox_sync = email::domain::mailbox::MailboxSyncService::new(
             mailbox_repository.clone(),
-            email_service::outbound::email_api::ProviderMailboxGateway(outlook_api.clone()),
+            routed_gateway(),
             mailbox_repository.clone(),
         );
         worker_tracker.spawn(email_service::mailbox_sync_worker::run_health(
@@ -461,6 +474,9 @@ async fn main() -> anyhow::Result<()> {
                     outlook: email_service::outbound::email_api::ProviderMailboxGateway(
                         outlook_api.clone(),
                     ),
+                    jmap: email_service::outbound::email_api::ProviderMailboxGateway(
+                        jmap_api.clone(),
+                    ),
                 },
                 s3: s3_client.clone(),
                 bucket: config.attachment_bucket.to_string(),
@@ -498,9 +514,7 @@ async fn main() -> anyhow::Result<()> {
             mailbox_repository,
             email_service::outbound::mailbox_projection::MailboxEffects {
                 db: db.clone(),
-                attachments: email_service::outbound::email_api::ProviderMailboxGateway(
-                    outlook_api,
-                ),
+                attachments: routed_gateway(),
                 invitations: email::outbound::invitation_pg::InvitationPgRepository(db.clone()),
                 broker: macro_event_broker.clone(),
                 notification: notification_ingress_service.clone(),

@@ -2,8 +2,9 @@
 //!
 //! Operator tool that connects a JMAP or IMAP mailbox to a Macro user until
 //! the add-account form exists. It creates an inactive `email_links` row and
-//! stores the credentials, sealed, in the authentication service. Nothing
-//! syncs the mailbox yet: the adapters come in later phases.
+//! stores the credentials, sealed, in the authentication service. With
+//! `--activate` the shared mailbox engine then syncs it, read-only (JMAP
+//! today; IMAP once its adapter exists).
 //!
 //! The password or API key is read from standard input (one line), never
 //! from an argument, so it stays out of shell history and process listings.
@@ -69,6 +70,10 @@ struct Args {
     /// The name the mailbox signs in with.
     #[arg(long)]
     username: String,
+    /// Start syncing the mailbox once it is connected. Without it the link
+    /// stays inactive and nothing reads the mailbox.
+    #[arg(long)]
+    activate: bool,
     #[command(subcommand)]
     server: Server,
 }
@@ -151,9 +156,18 @@ async fn run() -> Result<(), Report> {
     let service =
         GenericConnectionService::new(PgMailboxSync::new(db), AuthGenericCredentials(auth));
 
+    let activate = args.activate;
     match service.connect(request).await {
+        Ok(link_id) if activate => {
+            service
+                .activate(link_id)
+                .await
+                .context("connected, but the mailbox could not be activated")?;
+            println!("connected and syncing: link {link_id}");
+            Ok(())
+        }
         Ok(link_id) => {
-            println!("connected: link {link_id} (inactive until its adapter is enabled)");
+            println!("connected: link {link_id} (inactive; rerun with --activate to sync)");
             Ok(())
         }
         Err(GenericConnectionError::AlreadyConnected) => Err(rootcause::report!(

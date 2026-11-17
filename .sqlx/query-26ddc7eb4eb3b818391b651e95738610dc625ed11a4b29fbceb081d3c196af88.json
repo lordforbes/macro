@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            WITH candidate AS (\n                SELECT s.id, s.notified_traceparent FROM email_sync_streams s JOIN email_links l ON l.id = s.link_id\n                WHERE l.is_sync_active AND NOT l.needs_reauth AND l.provider = 'OUTLOOK' AND s.generation = l.sync_generation\n                    AND s.kind = 'mail_folder' AND s.next_run_at <= now()\n                    AND (s.lease_until IS NULL OR s.lease_until < now())\n                ORDER BY s.next_run_at, s.id LIMIT 1 FOR UPDATE OF s SKIP LOCKED\n            )\n            -- The trace context is handed over once: retries get traces of\n            -- their own, so a long deferral can't grow the webhook's trace.\n            UPDATE email_sync_streams s SET lease_id = $1, lease_until = now() + interval '3 minutes', lease_started_at = clock_timestamp(), fence = fence + 1,\n                notified_traceparent = NULL\n            FROM candidate c, email_links l WHERE s.id = c.id AND l.id = s.link_id\n            RETURNING s.id, s.link_id, s.generation, l.grant_generation, s.scope_id,\n                s.position, s.initial_complete, s.fence, s.notified_at, c.notified_traceparent\n        ",
+  "query": "\n            WITH candidate AS (\n                SELECT s.id, s.notified_traceparent FROM email_sync_streams s JOIN email_links l ON l.id = s.link_id\n                WHERE l.is_sync_active AND NOT l.needs_reauth AND l.provider IN ('OUTLOOK','JMAP','IMAP') AND s.generation = l.sync_generation\n                    AND s.kind = 'mail_folder' AND s.next_run_at <= now()\n                    AND (s.lease_until IS NULL OR s.lease_until < now())\n                ORDER BY s.next_run_at, s.id LIMIT 1 FOR UPDATE OF s SKIP LOCKED\n            )\n            -- The trace context is handed over once: retries get traces of\n            -- their own, so a long deferral can't grow the webhook's trace.\n            UPDATE email_sync_streams s SET lease_id = $1, lease_until = now() + interval '3 minutes', lease_started_at = clock_timestamp(), fence = fence + 1,\n                notified_traceparent = NULL\n            FROM candidate c, email_links l WHERE s.id = c.id AND l.id = s.link_id\n            RETURNING s.id, s.link_id, s.generation, l.grant_generation, s.scope_id,\n                s.position, s.initial_complete, s.fence, s.notified_at, c.notified_traceparent\n        ",
   "describe": {
     "columns": [
       {
@@ -72,5 +72,5 @@
       true
     ]
   },
-  "hash": "4c14246546b0f6c27ccc179da8334feff4ff29a62908faac34fadc1e387154e6"
+  "hash": "26ddc7eb4eb3b818391b651e95738610dc625ed11a4b29fbceb081d3c196af88"
 }

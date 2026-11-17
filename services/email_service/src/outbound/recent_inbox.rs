@@ -54,6 +54,7 @@ impl RecentInboxMailboxes for PgRecentInboxes {
 pub struct ProviderRecentInbox<R, T, L> {
     pub gmail: GmailApi,
     pub outlook: MailboxApiService<R, T, L>,
+    pub jmap: super::email_api::JmapApi,
 }
 
 impl<R, T, L> RecentInboxReader for ProviderRecentInbox<R, T, L>
@@ -84,8 +85,23 @@ where
                 .into_iter()
                 .map(|message| message.content.message)
                 .collect(),
-            // Generic mailbox adapters are not wired into the service yet.
-            UserProvider::Jmap | UserProvider::Imap => {
+            UserProvider::Jmap => {
+                let access = MailboxAccess {
+                    link_id: mailbox.key.link_id,
+                    sync_generation: mailbox.key.sync_generation,
+                    grant_generation: mailbox.key.grant_generation,
+                };
+                // The JMAP adapter finds the inbox among the folders.
+                let folders = self.jmap.folders(access).await?;
+                self.jmap
+                    .recent_inbox_messages(access, limit, &folders)
+                    .await?
+                    .into_iter()
+                    .map(|message| message.content.message)
+                    .collect()
+            }
+            // The IMAP adapter does not exist yet.
+            UserProvider::Imap => {
                 return Err(EmailApiError::Unsupported {
                     capability: MailboxCapability::Read,
                 });
