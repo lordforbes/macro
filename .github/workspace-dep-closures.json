@@ -6791,6 +6791,7 @@
       "crates/filter_ast",
       "crates/frecency",
       "crates/genai_telemetry",
+      "crates/generic_mailbox_credentials",
       "crates/gmail_client",
       "crates/harness_id",
       "crates/harness_token",

@@ -22,7 +22,7 @@ microsoft-gate = ["ports", "dep:redis"]
 generic-mailbox = ["ports", "dep:serde_json", "dep:mailparse", "dep:sha2", "dep:lazy-regex"]
 # The read-only safety check, for adapter tests in other crates.
 test-support = ["generic-mailbox"]
-outbound-jmap = ["generic-mailbox"]
+outbound-jmap = ["generic-mailbox", "dep:generic_mailbox_credentials", "dep:percent-encoding", "dep:reqwest", "dep:url", "dep:strum"]
 outbound-imap = ["generic-mailbox"]
 outbound-outlook = ["dep:macro_service_urls", "dep:scraper", "dep:html-escape", "dep:calendar_events", "dep:chrono-tz", "ports", "dep:sha2", "dep:base64", "dep:reqwest", "dep:serde_json", "dep:url", "dep:httpdate", "dep:mailparse", "dep:serde_path_to_error"]
 
@@ -44,6 +44,9 @@ macro_service_urls = { path = "../macro_service_urls", optional = true }
 mail-builder = { workspace = true }
 mailparse = { workspace = true, optional = true }
 lazy-regex = { workspace = true, optional = true }
+generic_mailbox_credentials = { path = "../generic_mailbox_credentials", optional = true }
+strum = { workspace = true, optional = true }
+percent-encoding = { workspace = true, optional = true }
 models_email = { path = "../models_email" }
 serde = { workspace = true }
 serde_json = { workspace = true, optional = true }

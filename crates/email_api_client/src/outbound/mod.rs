@@ -8,6 +8,10 @@ pub mod gmail;
 #[cfg(feature = "outbound-outlook")]
 pub mod outlook;
 
+/// Read-only JMAP adapter for generic mailboxes.
+#[cfg(feature = "outbound-jmap")]
+pub mod jmap;
+
 /// Cross-service Microsoft request admission.
 #[cfg(feature = "microsoft-gate")]
 pub mod microsoft_gate;

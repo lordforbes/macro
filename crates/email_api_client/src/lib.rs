@@ -6,7 +6,11 @@
 pub mod domain;
 
 /// Provider-specific outbound adapters.
-#[cfg(any(feature = "outbound-gmail", feature = "outbound-outlook"))]
+#[cfg(any(
+    feature = "outbound-gmail",
+    feature = "outbound-outlook",
+    feature = "outbound-jmap"
+))]
 pub mod outbound;
 
 #[cfg(feature = "outbound-gmail")]
@@ -14,3 +18,6 @@ pub use outbound::gmail::GmailApiClientRepository;
 
 #[cfg(feature = "outbound-outlook")]
 pub use outbound::outlook::OutlookApiClientRepository;
+
+#[cfg(feature = "outbound-jmap")]
+pub use outbound::jmap::JmapApiClientRepository;

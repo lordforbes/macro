@@ -400,6 +400,7 @@ pdfium-render = { version = "0.8.37", default-features = false, features = [
   "pdfium_7543",
   "thread_safe",
 ] }
+percent-encoding = "2"
 pgvector = { version = "0.4", features = ["postgres", "sqlx"] }
 png = "0.18"
 postcard = { version = "1", features = ["use-std"] }
