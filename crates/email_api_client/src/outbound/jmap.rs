@@ -7,6 +7,8 @@
 //! [`handle::ReadOnlyJmap`], which can express only the read-only methods the
 //! brief allows (see `method.rs`). Written against Mailflare and kept generic.
 
+mod changes;
+mod content;
 mod handle;
 mod method;
 mod transport;

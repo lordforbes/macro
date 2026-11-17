@@ -7569,6 +7569,7 @@ dependencies = [
  "httpdate",
  "lazy-regex",
  "macro_db_migrator",
+ "macro_env_var",
  "macro_event_broker",
  "macro_service_urls",
  "mail-builder",

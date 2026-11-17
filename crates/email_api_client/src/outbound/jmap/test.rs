@@ -272,3 +272,6 @@ fn a_token_that_is_not_credentials_is_refused() {
             .is_err()
     );
 }
+
+/// Live tests against a local JMAP server; ignored by default.
+mod live;
