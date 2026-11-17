@@ -20,6 +20,8 @@ outbound-gmail = [
 microsoft-gate = ["ports", "dep:redis"]
 # Shared vocabulary for the generic mailbox protocols. Off by default.
 generic-mailbox = ["ports", "dep:serde_json", "dep:mailparse", "dep:sha2", "dep:lazy-regex"]
+# The read-only safety check, for adapter tests in other crates.
+test-support = ["generic-mailbox"]
 outbound-jmap = ["generic-mailbox"]
 outbound-imap = ["generic-mailbox"]
 outbound-outlook = ["dep:macro_service_urls", "dep:scraper", "dep:html-escape", "dep:calendar_events", "dep:chrono-tz", "ports", "dep:sha2", "dep:base64", "dep:reqwest", "dep:serde_json", "dep:url", "dep:httpdate", "dep:mailparse", "dep:serde_path_to_error"]

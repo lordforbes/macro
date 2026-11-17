@@ -8,6 +8,9 @@
 mod test;
 /// Threads synthesised from message headers.
 pub mod threads;
+/// The read-only safety check adapter tests run around a sync.
+#[cfg(any(test, feature = "test-support"))]
+pub mod safety;
 
 use serde::{Deserialize, Serialize};
 

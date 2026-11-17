@@ -22,6 +22,12 @@ Outlook (Microsoft Graph) outbound adapters.
   which owns request headers, provider error mapping, write-failure logs,
   and one `outlook.graph_request` span per attempt (with an
   `outlook.graph_admission` child for the per-mailbox gate wait).
+- `src/domain/models/generic.rs` (feature `generic-mailbox`, enabled by
+  `outbound-jmap` and `outbound-imap`, all off by default): the shared layer
+  for generic JMAP and IMAP mailboxes: versioned cursors, folder roles,
+  flags, `generic/threads.rs` (threads from headers) and, with
+  `test-support`, `generic/safety.rs` (the read-only check adapter tests
+  run around a sync).
 - `src/outbound/microsoft_gate.rs`: the Redis admission every Graph request
   passes (window, concurrency, cooldown), which also counts admitted requests
   per sync generation.
