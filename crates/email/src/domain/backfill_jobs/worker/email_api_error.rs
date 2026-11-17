@@ -17,6 +17,7 @@ pub fn map_email_api_error(error: EmailApiError, context: &'static str) -> Proce
         | EmailApiError::Transient { .. }
         | EmailApiError::CredentialsUnavailable { .. }
         | EmailApiError::SendRejected { .. }
+        | EmailApiError::Unsupported { .. }
         | EmailApiError::Permanent { .. } => FailureReason::GmailApiFailed,
     };
     let is_retryable = error.is_transient();

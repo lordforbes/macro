@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use email_api_client::domain::models::RateLimitOrigin;
+use email_api_client::domain::models::{MailboxCapability, RateLimitOrigin};
 
 use super::*;
 
@@ -23,6 +23,12 @@ fn maps_provider_errors_to_api_statuses() {
                 message: "message exceeds provider size limit".to_string(),
             },
             StatusCode::BAD_REQUEST,
+        ),
+        (
+            EmailApiError::Unsupported {
+                capability: MailboxCapability::Tags,
+            },
+            StatusCode::UNPROCESSABLE_ENTITY,
         ),
         (
             EmailApiError::Transient {

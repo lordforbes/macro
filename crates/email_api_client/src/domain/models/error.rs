@@ -2,6 +2,8 @@ use std::time::Duration;
 
 use thiserror::Error;
 
+use super::MailboxCapability;
+
 /// A rate-limit decision made before a provider request is attempted.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RateLimitRefusal {
@@ -60,6 +62,13 @@ pub enum EmailApiError {
     Permanent {
         /// A sanitized diagnostic suitable for logs.
         message: String,
+    },
+    /// The mailbox's provider does not offer this feature. Not retryable;
+    /// callers show the feature as unavailable rather than as a failure.
+    #[error("the mailbox provider does not support this operation")]
+    Unsupported {
+        /// The missing feature.
+        capability: MailboxCapability,
     },
     /// The provider explicitly rejected message submission without accepting it.
     /// Unlike a malformed success response, this permits cancelling and editing.

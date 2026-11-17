@@ -2,6 +2,7 @@
 
 mod address_book;
 mod auth;
+mod capability;
 mod changes;
 mod draft;
 mod error;
@@ -17,6 +18,7 @@ mod send;
 
 pub use address_book::*;
 pub use auth::{AccessToken, TokenError, TokenFreshness};
+pub use capability::MailboxCapability;
 pub use changes::{ChangeBatch, ChangePage, InboxChanges, SyncCursor};
 pub use draft::*;
 pub use error::{EmailApiError, GateLimit, RateLimitOrigin, RateLimitRefusal};

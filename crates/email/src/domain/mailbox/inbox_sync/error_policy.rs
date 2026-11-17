@@ -76,6 +76,7 @@ fn detail(error: EmailApiError) -> DetailedError {
         | EmailApiError::Transient { .. }
         | EmailApiError::CredentialsUnavailable { .. }
         | EmailApiError::SendRejected { .. }
+        | EmailApiError::Unsupported { .. }
         | EmailApiError::Permanent { .. } => FailureReason::GmailApiFailed,
     };
     DetailedError {
