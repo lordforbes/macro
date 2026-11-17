@@ -60,6 +60,10 @@ pub enum UserProvider {
     Gmail,
     /// Microsoft Outlook and Microsoft 365.
     Outlook,
+    /// A generic JMAP (RFC 8620/8621) mailbox.
+    Jmap,
+    /// A generic IMAP mailbox.
+    Imap,
 }
 
 impl UserProvider {
@@ -67,6 +71,8 @@ impl UserProvider {
         match self {
             UserProvider::Gmail => "GMAIL",
             UserProvider::Outlook => "OUTLOOK",
+            UserProvider::Jmap => "JMAP",
+            UserProvider::Imap => "IMAP",
         }
     }
 }
@@ -82,6 +88,8 @@ impl From<crate::email::service::link::UserProvider> for UserProvider {
         match provider {
             crate::email::service::link::UserProvider::Gmail => UserProvider::Gmail,
             crate::email::service::link::UserProvider::Outlook => UserProvider::Outlook,
+            crate::email::service::link::UserProvider::Jmap => UserProvider::Jmap,
+            crate::email::service::link::UserProvider::Imap => UserProvider::Imap,
         }
     }
 }

@@ -266,6 +266,31 @@ async fn user_inbox_details_reports_the_calendar_grant(pool: Pool<Postgres>) -> 
     migrator = "MACRO_DB_MIGRATIONS",
     fixtures(path = "../../../../fixtures", scripts("email_message"))
 )]
+async fn generic_mailbox_inbox_details_never_ask_for_calendar(
+    pool: Pool<Postgres>,
+) -> anyhow::Result<()> {
+    let link_id = Uuid::parse_str("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")?;
+    let owner = sqlx::query_scalar!(
+        "UPDATE email_links SET provider = 'JMAP' WHERE id = $1 RETURNING macro_id",
+        link_id
+    )
+    .fetch_one(&pool)
+    .await?;
+
+    let details = EmailPgRepo::new(pool)
+        .user_inbox_details(MacroUserIdStr::try_from(owner)?)
+        .await?;
+
+    let inbox = &details[0];
+    assert_eq!(inbox.provider, UserProvider::Jmap);
+    assert!(!inbox.needs_calendar_permission);
+    Ok(())
+}
+
+#[sqlx::test(
+    migrator = "MACRO_DB_MIGRATIONS",
+    fixtures(path = "../../../../fixtures", scripts("email_message"))
+)]
 async fn test_link_by_fusionauth_email_provider_found(pool: Pool<Postgres>) -> anyhow::Result<()> {
     let repo = EmailPgRepo::new(pool);
 

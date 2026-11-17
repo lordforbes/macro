@@ -696,8 +696,12 @@ impl CalendarRepository for PgCalendarRepository {
         let Some(row) = row else {
             return Ok(None);
         };
+        // Refuse providers without a calendar before writing anything: the
+        // Google branch below would otherwise record scopes for them.
+        let provider = CalendarProvider::from_link(&row.provider)
+            .ok_or_else(|| rootcause::report!("unsupported calendar provider"))?;
 
-        if row.provider == "OUTLOOK" {
+        if provider == CalendarProvider::Outlook {
             sqlx::query!("UPDATE email_link_microsoft_scopes SET calendar_disabled_at=now(),updated_at=now() WHERE link_id=$1",email_link_id).execute(&mut *tx).await.map_err(report)?;
             let mut log = ChangeLogBatch::default();
             disable_calendar_capability_tx(&mut tx, &mut log, email_link_id).await?;
@@ -796,8 +800,7 @@ impl CalendarRepository for PgCalendarRepository {
                 }),
                 fusionauth_user_id: row.fusionauth_user_id,
                 email_address: row.email_address,
-                provider: CalendarProvider::from_link(&row.provider)
-                    .ok_or_else(|| rootcause::report!("unsupported calendar provider"))?,
+                provider,
             },
             watch_channels,
         }))

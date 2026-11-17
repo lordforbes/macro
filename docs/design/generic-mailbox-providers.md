@@ -77,8 +77,8 @@ Adding `Jmap` and `Imap` touches:
 
 | What | Where | Count |
 | --- | --- | --- |
-| Postgres enum `email_user_provider_enum` | new migration: `ALTER TYPE … ADD VALUE` (one statement per value; a new value cannot be used in the transaction that adds it, so these are `-- no-transaction` migrations) | 1–2 files |
-| Rust enums | `crates/email/src/domain/models/link.rs`, `crates/models_email/src/email/{api,service}/link.rs`, `crates/email_db_client/src/links/types.rs` (`DbUserProvider`, with a `Doppleganger` mirror), `crates/graphql_email/src/user_objects.rs` (`GraphqlEmailProvider`) | 5 |
+| Postgres enum `email_user_provider_enum` | new migration: `ALTER TYPE … ADD VALUE IF NOT EXISTS`, one statement per value. Postgres allows this inside a transaction; the value only cannot be used in that transaction, so the migration does nothing else | 1 file |
+| Rust enums | `crates/email/src/domain/models/link.rs`, `crates/models_email/src/email/{api,service}/link.rs`, `crates/email_db_client/src/links/types.rs` and `crates/email/src/outbound/email_pg_repo/db_types.rs` (two `DbUserProvider`s, each with a `Doppleganger` mirror), `crates/graphql_email/src/user_objects.rs` (`GraphqlEmailProvider`) | 6 |
 | Text-to-enum conversions | `mailbox_pg/lifecycle.rs`, `mailbox_pg/settings.rs` (2), `email_pg_repo/draft_attachments.rs`, `email_pg_repo/draft_transfer.rs`, `email_service/src/outbound/inbox_health.rs`, `email_service/src/api/middleware/link.rs` | 7 |
 | Exhaustive `match` arms | attachment access, recent inbox, message source, inbox health token, mailbox settings (3), draft size limits (2), health refresh, catalog calendar flag, blocked senders, resync, DB conversions | about 26 |
 | SQL filtering on `l.provider = 'OUTLOOK'` | about 35 Rust files under `crates/email/src/outbound/mailbox_pg*`, `email_service/src/outbound/*` | see below |

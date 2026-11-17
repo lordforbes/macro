@@ -190,6 +190,11 @@ where
         let maximum = match plan.destination_provider {
             UserProvider::Gmail => 18_000_000,
             UserProvider::Outlook => 150_000_000,
+            UserProvider::Jmap | UserProvider::Imap => {
+                return Err(EmailErr::InvalidDraft(
+                    "The destination inbox cannot store drafts".into(),
+                ));
+            }
         };
         let mut total = plan
             .uploads

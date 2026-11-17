@@ -30,6 +30,8 @@ async fn snapshot(
         provider: match row.provider.as_str() {
             "GMAIL" => UserProvider::Gmail,
             "OUTLOOK" => UserProvider::Outlook,
+            "JMAP" => UserProvider::Jmap,
+            "IMAP" => UserProvider::Imap,
             _ => return Err(InboxLifecycleError::Unavailable),
         },
         promoted: row.promoted,
@@ -284,7 +286,8 @@ impl InboxLifecycleRepository for PgMailboxSync {
                     }
                 }
             }
-            UserProvider::Outlook => {
+            // Generic mailboxes run on the same stream engine as Outlook.
+            UserProvider::Outlook | UserProvider::Jmap | UserProvider::Imap => {
                 let stream=sqlx::query!("SELECT id,initial_complete FROM email_sync_streams WHERE link_id = $1 AND generation = $2 AND kind = 'folder_catalog' LIMIT 1",link,current.sync_generation).fetch_optional(&mut *tx).await.map_err(failed)?;
                 let in_progress=sqlx::query_scalar!(r#"SELECT EXISTS(SELECT 1 FROM email_sync_streams WHERE link_id = $1 AND generation = $2 AND kind IN ('folder_catalog','mail_folder') AND NOT initial_complete)
                     OR EXISTS(SELECT 1 FROM email_message_reconciliation WHERE link_id = $1 AND generation = $2 AND is_import AND available_at <> 'infinity') AS "running!""#,link,current.sync_generation).fetch_one(&mut *tx).await.map_err(failed)?;

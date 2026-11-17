@@ -488,6 +488,8 @@ pub async fn fetch_readable_owned_inboxes(
             provider: match row.provider {
                 DbUserProvider::Gmail => service::link::UserProvider::Gmail,
                 DbUserProvider::Outlook => service::link::UserProvider::Outlook,
+                DbUserProvider::Jmap => service::link::UserProvider::Jmap,
+                DbUserProvider::Imap => service::link::UserProvider::Imap,
             },
             sync_generation: row.sync_generation,
             grant_generation: row.grant_generation,

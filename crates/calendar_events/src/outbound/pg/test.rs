@@ -7565,3 +7565,35 @@ async fn mention_previews_say_how_the_viewer_holds_the_meeting(pool: PgPool) {
     );
     assert_eq!(held_as(member_id).await, None);
 }
+
+#[sqlx::test(migrator = "MACRO_DB_MIGRATIONS")]
+async fn disconnecting_calendar_of_a_mailbox_without_one_records_nothing(pool: PgPool) {
+    let owner_id = "macro|calendar-generic@example.com";
+    let link_id = Uuid::now_v7();
+    sqlx::query!(
+        r#"
+        INSERT INTO email_links (
+            id, macro_id, fusionauth_user_id, email_address, provider
+        )
+        VALUES ($1, $2, $2, 'generic@example.com', 'JMAP')
+        "#,
+        link_id,
+        owner_id,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    let repo = PgCalendarRepository::new(pool.clone());
+
+    let result = repo.disconnect_provider_calendar(owner_id, link_id).await;
+
+    assert!(result.is_err());
+    let scopes = sqlx::query_scalar!(
+        r#"SELECT count(*) AS "count!" FROM email_link_google_scopes WHERE link_id = $1"#,
+        link_id,
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(scopes, 0);
+}

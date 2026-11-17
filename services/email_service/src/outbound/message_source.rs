@@ -5,7 +5,7 @@ use email::domain::{
     message_source::{MessageSourceBytes, MessageSourceRecord},
 };
 use email_api_client::domain::{
-    models::{EmailApiError, MailboxAccess, ProviderId},
+    models::{EmailApiError, MailboxAccess, MailboxCapability, ProviderId},
     ports::{
         MailboxContentReader, MailboxTokenSource, ProviderRateLimiter, ScopedMailboxRepository,
     },
@@ -44,6 +44,12 @@ where
                     )
                     .await
                     .map_err(provider_error)
+            }
+            // Generic mailbox adapters are not wired into the service yet.
+            UserProvider::Jmap | UserProvider::Imap => {
+                Err(provider_error(EmailApiError::Unsupported {
+                    capability: MailboxCapability::Read,
+                }))
             }
         }
     }

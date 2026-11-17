@@ -19,6 +19,8 @@ pub(super) async fn link_by_fusionauth_and_macro_id(
     let provider: DbUserProvider = match provider {
         UserProvider::Gmail => DbUserProvider::Gmail,
         UserProvider::Outlook => DbUserProvider::Outlook,
+        UserProvider::Jmap => DbUserProvider::Jmap,
+        UserProvider::Imap => DbUserProvider::Imap,
     };
 
     let db_link = sqlx::query_as!(
@@ -53,6 +55,8 @@ pub(super) async fn link_by_fusionauth_email_provider(
     let provider: DbUserProvider = match provider {
         UserProvider::Gmail => DbUserProvider::Gmail,
         UserProvider::Outlook => DbUserProvider::Outlook,
+        UserProvider::Jmap => DbUserProvider::Jmap,
+        UserProvider::Imap => DbUserProvider::Imap,
     };
 
     let db_link = sqlx::query_as!(
@@ -210,15 +214,25 @@ struct DbInboxDetailsRow {
 impl DbInboxDetailsRow {
     /// Convert the database projection into domain-owned persisted facts.
     fn try_into_model(self) -> Result<EmailInboxDetails, macro_user_id::error::ParseErr> {
+        let provider = match self.provider {
+            DbUserProvider::Gmail => UserProvider::Gmail,
+            DbUserProvider::Outlook => UserProvider::Outlook,
+            DbUserProvider::Jmap => UserProvider::Jmap,
+            DbUserProvider::Imap => UserProvider::Imap,
+        };
+        // A generic mailbox has no calendar to grant, so it never asks.
+        let needs_calendar_permission = match provider {
+            UserProvider::Gmail | UserProvider::Outlook => {
+                !GoogleScopeSet::from_scopes(self.google_granted_scopes).has_calendar_capability()
+            }
+            UserProvider::Jmap | UserProvider::Imap => false,
+        };
         Ok(EmailInboxDetails {
             id: self.id,
             macro_id: MacroUserIdStr::try_from(self.macro_id)?,
             email_address: EmailStr::try_from(self.email_address)?,
             photo_url: self.photo_url,
-            provider: match self.provider {
-                DbUserProvider::Gmail => UserProvider::Gmail,
-                DbUserProvider::Outlook => UserProvider::Outlook,
-            },
+            provider,
             is_sync_active: self.is_sync_active,
             needs_reauth: self.needs_reauth,
             settings: UserEmailLinkSettings {
@@ -233,8 +247,7 @@ impl DbInboxDetailsRow {
                 DbEmailBackfillStatus::Cancelled => EmailBackfillStatus::Cancelled,
                 DbEmailBackfillStatus::Failed => EmailBackfillStatus::Failed,
             }),
-            needs_calendar_permission: !GoogleScopeSet::from_scopes(self.google_granted_scopes)
-                .has_calendar_capability(),
+            needs_calendar_permission,
             calendar_disabled: self.calendar_disabled,
             has_calendar_data: self.has_calendar_data,
             created_at: self.created_at,

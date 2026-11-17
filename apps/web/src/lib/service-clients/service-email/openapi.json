@@ -7895,7 +7895,7 @@
       },
       "UserProvider": {
         "type": "string",
-        "enum": ["GMAIL", "OUTLOOK"]
+        "enum": ["GMAIL", "OUTLOOK", "JMAP", "IMAP"]
       },
       "Value": {},
       "ViewerCapabilities": {

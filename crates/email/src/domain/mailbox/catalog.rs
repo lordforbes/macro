@@ -64,22 +64,28 @@ impl<R: InboxCatalogRepository> InboxCatalogService<R> {
                     facts.link.needs_reauth,
                     facts.latest_backfill_status,
                 );
-                let has_calendar = match facts.link.provider {
+                // A generic mailbox has no calendar to grant, so it never asks.
+                let needs_calendar_permission = match facts.link.provider {
                     UserProvider::Gmail => {
-                        calendar_events::domain::models::GoogleScopeSet::from_scopes(
-                            facts.granted_scopes.clone(),
-                        )
-                        .has_calendar_capability()
+                        let has_calendar =
+                            calendar_events::domain::models::GoogleScopeSet::from_scopes(
+                                facts.granted_scopes.clone(),
+                            )
+                            .has_calendar_capability();
+                        facts.calendar_disabled || !has_calendar
                     }
-                    UserProvider::Outlook => facts.granted_scopes.iter().any(|scope| {
-                        scope
-                            .rsplit('/')
-                            .next()
-                            .is_some_and(|scope| scope.eq_ignore_ascii_case("Calendars.ReadWrite"))
-                    }),
+                    UserProvider::Outlook => {
+                        let has_calendar = facts.granted_scopes.iter().any(|scope| {
+                            scope.rsplit('/').next().is_some_and(|scope| {
+                                scope.eq_ignore_ascii_case("Calendars.ReadWrite")
+                            })
+                        });
+                        facts.calendar_disabled || !has_calendar
+                    }
+                    UserProvider::Jmap | UserProvider::Imap => false,
                 };
                 InboxCatalogEntry {
-                    needs_calendar_permission: facts.calendar_disabled || !has_calendar,
+                    needs_calendar_permission,
                     sync_status,
                     facts,
                 }

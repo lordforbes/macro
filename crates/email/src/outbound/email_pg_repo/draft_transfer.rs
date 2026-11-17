@@ -22,6 +22,8 @@ fn provider(value: &str) -> Result<UserProvider, EmailErr> {
     match value {
         "GMAIL" => Ok(UserProvider::Gmail),
         "OUTLOOK" => Ok(UserProvider::Outlook),
+        "JMAP" => Ok(UserProvider::Jmap),
+        "IMAP" => Ok(UserProvider::Imap),
         _ => Err(invalid()),
     }
 }

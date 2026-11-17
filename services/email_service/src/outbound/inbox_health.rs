@@ -1,7 +1,9 @@
 use contacts::domain::ports::ContactsIngress;
 use email::domain::mailbox::{MailboxError, health::*};
 use email_api_client::domain::{
-    models::{AccessToken, EmailApiError, MailboxAccess, TokenError, TokenFreshness},
+    models::{
+        AccessToken, EmailApiError, MailboxAccess, MailboxCapability, TokenError, TokenFreshness,
+    },
     ports::MailboxTokenSource,
 };
 use macro_event_broker::MacroEventBroker;
@@ -37,6 +39,8 @@ impl InboxHealthRepository for PgInboxHealth {
             provider: match row.provider.as_str() {
                 "GMAIL" => UserProvider::Gmail,
                 "OUTLOOK" => UserProvider::Outlook,
+                "JMAP" => UserProvider::Jmap,
+                "IMAP" => UserProvider::Imap,
                 _ => return Err(MailboxError::Persistence),
             },
             is_sync_active: row.is_sync_active,
@@ -114,6 +118,10 @@ impl<T: MailboxTokenSource, B: MacroEventBroker, C: ContactsIngress> InboxHealth
                         message: "Microsoft token health is temporarily unavailable".into(),
                     },
                 }),
+            // Generic mailbox credentials are not wired into the service yet.
+            UserProvider::Jmap | UserProvider::Imap => Err(EmailApiError::Unsupported {
+                capability: MailboxCapability::Read,
+            }),
         }
     }
     async fn renew_gmail_watch(

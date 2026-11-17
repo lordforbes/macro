@@ -105,7 +105,10 @@ impl<R: InboxHealthRepository, G: InboxHealthGateway> InboxHealthService<R, G> {
                 self.renew_gmail_watch(&binding.link).await?;
                 self.gateway.sync_gmail_contacts(&binding.link).await
             }
-            UserProvider::Outlook => self.repository.wake_streams(binding).await,
+            // Generic mailboxes run on the same stream engine as Outlook.
+            UserProvider::Outlook | UserProvider::Jmap | UserProvider::Imap => {
+                self.repository.wake_streams(binding).await
+            }
         }
     }
 

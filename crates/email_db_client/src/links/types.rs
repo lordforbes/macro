@@ -11,6 +11,10 @@ pub enum DbUserProvider {
     Gmail,
     /// Microsoft Outlook and Microsoft 365.
     Outlook,
+    /// A generic JMAP (RFC 8620/8621) mailbox.
+    Jmap,
+    /// A generic IMAP mailbox.
+    Imap,
 }
 
 impl DbUserProvider {
@@ -18,6 +22,8 @@ impl DbUserProvider {
         match self {
             DbUserProvider::Gmail => "GMAIL",
             DbUserProvider::Outlook => "OUTLOOK",
+            DbUserProvider::Jmap => "JMAP",
+            DbUserProvider::Imap => "IMAP",
         }
     }
 }
@@ -52,6 +58,8 @@ impl From<models_email::email::service::link::Link> for DbLink {
             provider: match service_link.provider {
                 models_email::service::link::UserProvider::Gmail => DbUserProvider::Gmail,
                 models_email::service::link::UserProvider::Outlook => DbUserProvider::Outlook,
+                models_email::service::link::UserProvider::Jmap => DbUserProvider::Jmap,
+                models_email::service::link::UserProvider::Imap => DbUserProvider::Imap,
             },
             is_sync_active: service_link.is_sync_active,
             is_primary: service_link.is_primary,
@@ -88,6 +96,8 @@ impl TryFrom<DbLink> for models_email::email::service::link::Link {
             provider: match provider {
                 DbUserProvider::Gmail => UserProvider::Gmail,
                 DbUserProvider::Outlook => UserProvider::Outlook,
+                DbUserProvider::Jmap => UserProvider::Jmap,
+                DbUserProvider::Imap => UserProvider::Imap,
             },
             is_sync_active,
             is_primary,

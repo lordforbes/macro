@@ -12,6 +12,10 @@ pub enum UserProvider {
     Gmail,
     /// Microsoft Outlook and Microsoft 365.
     Outlook,
+    /// A generic JMAP (RFC 8620/8621) mailbox.
+    Jmap,
+    /// A generic IMAP mailbox.
+    Imap,
 }
 
 impl UserProvider {
@@ -19,6 +23,8 @@ impl UserProvider {
         match self {
             UserProvider::Gmail => "GMAIL",
             UserProvider::Outlook => "OUTLOOK",
+            UserProvider::Jmap => "JMAP",
+            UserProvider::Imap => "IMAP",
         }
     }
 }

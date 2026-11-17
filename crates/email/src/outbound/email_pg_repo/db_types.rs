@@ -155,6 +155,10 @@ pub enum DbUserProvider {
     Gmail,
     /// Microsoft Outlook and Microsoft 365.
     Outlook,
+    /// A generic JMAP (RFC 8620/8621) mailbox.
+    Jmap,
+    /// A generic IMAP mailbox.
+    Imap,
 }
 
 #[derive(Debug, Clone)]

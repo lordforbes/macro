@@ -5,7 +5,7 @@ use email::domain::{
     draft_attachments::AttachmentError,
     mailbox::{MailboxError, projection::MailboxAttachmentAccess},
 };
-use email_api_client::domain::models::EmailApiError;
+use email_api_client::domain::models::{EmailApiError, MailboxCapability};
 use models_email::{
     db::address::EmailRecipientType,
     service::{
@@ -65,6 +65,12 @@ impl<A: MailboxAttachmentAccess> AttachmentBytes for ProviderAttachmentBytes<A> 
                     MailboxError::Provider(e) => provider_error(e),
                     _ => AttachmentError::Infrastructure,
                 }),
+            // Generic mailbox adapters are not wired into the service yet.
+            UserProvider::Jmap | UserProvider::Imap => {
+                Err(provider_error(EmailApiError::Unsupported {
+                    capability: MailboxCapability::Read,
+                }))
+            }
         }
     }
 }

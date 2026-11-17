@@ -27,7 +27,9 @@
             "kind": {
               "Enum": [
                 "GMAIL",
-                "OUTLOOK"
+                "OUTLOOK",
+                "JMAP",
+                "IMAP"
               ]
             }
           }

@@ -24,6 +24,8 @@ where
         match mailbox.provider {
             UserProvider::Gmail => self.gmail.list_labels(mailbox.key.link_id).await,
             UserProvider::Outlook => self.outlook.labels(access(mailbox)).await,
+            // Generic mailboxes have folders only; the label list is empty.
+            UserProvider::Jmap | UserProvider::Imap => Ok(Vec::new()),
         }
     }
     async fn create_label(
@@ -34,6 +36,9 @@ where
         match mailbox.provider {
             UserProvider::Gmail => self.gmail.create_label(mailbox.key.link_id, name).await,
             UserProvider::Outlook => self.outlook.create_label(access(mailbox), name).await,
+            UserProvider::Jmap | UserProvider::Imap => Err(EmailApiError::Unsupported {
+                capability: MailboxCapability::Tags,
+            }),
         }
     }
     async fn delete_label(
@@ -44,6 +49,9 @@ where
         match mailbox.provider {
             UserProvider::Gmail => self.gmail.delete_label(mailbox.key.link_id, name).await,
             UserProvider::Outlook => self.outlook.delete_label(access(mailbox), name).await,
+            UserProvider::Jmap | UserProvider::Imap => Err(EmailApiError::Unsupported {
+                capability: MailboxCapability::Tags,
+            }),
         }
     }
     async fn category_messages(

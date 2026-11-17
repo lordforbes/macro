@@ -4,7 +4,7 @@
 use email::domain::mailbox::{MailboxError, MailboxKey};
 use email::domain::recent_inbox::{RecentInboxMailbox, RecentInboxMailboxes, RecentInboxReader};
 use email_api_client::domain::{
-    models::{EmailApiError, MailboxAccess},
+    models::{EmailApiError, MailboxAccess, MailboxCapability},
     ports::{
         MailboxContentReader, MailboxTokenSource, ProviderRateLimiter, ScopedMailboxRepository,
     },
@@ -84,6 +84,12 @@ where
                 .into_iter()
                 .map(|message| message.content.message)
                 .collect(),
+            // Generic mailbox adapters are not wired into the service yet.
+            UserProvider::Jmap | UserProvider::Imap => {
+                return Err(EmailApiError::Unsupported {
+                    capability: MailboxCapability::Read,
+                });
+            }
         };
 
         Ok(messages
