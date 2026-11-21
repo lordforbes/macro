@@ -837,8 +837,7 @@ fn str_field(v: &serde_json::Value, key: &str) -> String {
 fn probe(url: &str) -> bool {
     let mut cmd = Command::new("curl");
     cmd.args(["-fsS", "-m", "3", "-o", "/dev/null"]);
-    cmd.args(super::proxy::curl_ca_args(url));
-    cmd.arg(url);
+    cmd.args(super::proxy::curl_probe(url));
     cmd.status().map(|s| s.success()).unwrap_or(false)
 }
 

@@ -378,10 +378,13 @@ fn dev_env(instance: &Instance, mode: Mode, traces_enabled: bool) -> Result<Vec<
 /// Poll the backend (auth health, through the proxy) until ready.
 pub fn wait_backend_ready(stage: &Stage, instance: &Instance) -> Result<()> {
     let url = format!("{}/auth/health", proxy::url(instance));
-    let cacert = proxy::ca_pem();
+    let curl_args = proxy::curl_probe(&url)
+        .iter()
+        .map(|arg| format!("'{arg}'"))
+        .collect::<Vec<_>>()
+        .join(" ");
     let script = format!(
-        "for i in $(seq 1 600); do curl -fsS --cacert '{cacert}' --max-time 3 {url} >/dev/null 2>&1 && exit 0; sleep 0.2; done; echo 'backend not ready'; exit 1",
-        cacert = cacert.display()
+        "for i in $(seq 1 600); do curl -fsS --max-time 3 {curl_args} >/dev/null 2>&1 && exit 0; sleep 0.2; done; echo 'backend not ready'; exit 1"
     );
     let mut cmd = Command::new("bash");
     cmd.arg("-lc").arg(script);
@@ -407,10 +410,8 @@ fn wait_frontend_proxy_ready(stage: &Stage, instance: &Instance) -> Result<()> {
         "5",
         "--output",
         "/dev/null",
-        "--cacert",
     ])
-    .arg(proxy::ca_pem())
-    .arg(format!("{}/app/", proxy::url(instance)));
+    .args(proxy::curl_probe(&format!("{}/app/", proxy::url(instance))));
     stage
         .run("Checking frontend through HTTPS proxy", &mut cmd)
         .with_context(|| {

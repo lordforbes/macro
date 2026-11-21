@@ -51,6 +51,33 @@ pub fn curl_ca_args(url: &str) -> Vec<String> {
     }
 }
 
+/// Self-hosting: the public hostname the proxy's certificate is issued for, when
+/// the proxy serves a publicly trusted certificate instead of the development
+/// CA's localhost one. The stack's own HTTPS probes then reach the proxy by that
+/// name, resolved to loopback, and trust the system CA store.
+const PUBLIC_HOST_ENV: &str = "MACRO_PUBLIC_HOST";
+
+/// curl arguments, ending with the URL, that request `url` on this proxy with
+/// the trust options its certificate needs.
+pub fn curl_probe(url: &str) -> Vec<String> {
+    let public_host = macro_env_var::maybe_read_env(PUBLIC_HOST_ENV);
+    curl_probe_for(url, public_host.as_deref().filter(|h| !h.is_empty()))
+}
+
+fn curl_probe_for(url: &str, public_host: Option<&str>) -> Vec<String> {
+    if let (Some(host), Some(rest)) = (public_host, url.strip_prefix("https://localhost:")) {
+        let port = rest.split('/').next().unwrap_or_default();
+        return vec![
+            "--resolve".into(),
+            format!("{host}:{port}:127.0.0.1"),
+            format!("https://{host}:{rest}"),
+        ];
+    }
+    let mut args = curl_ca_args(url);
+    args.push(url.to_string());
+    args
+}
+
 /// Vite forwards only backend routes, leaving assets, SPA navigation and HMR
 /// with the frontend. Keep inventoried service paths sourced from the same
 /// inventory as Caddy; the remaining paths are this module's special routes.

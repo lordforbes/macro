@@ -588,3 +588,29 @@ fn real_caddy_applies_the_generated_cookie_rules() {
     }
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn curl_probe_trusts_the_dev_ca_without_a_public_host() {
+    let args = super::curl_probe_for("https://localhost:8090/auth/health", None);
+    assert_eq!(args[0], "--cacert");
+    assert_eq!(args.last().unwrap(), "https://localhost:8090/auth/health");
+}
+
+#[test]
+fn curl_probe_uses_the_public_host_on_loopback() {
+    let args = super::curl_probe_for("https://localhost:8090/app/", Some("macro.example.com"));
+    assert_eq!(
+        args,
+        [
+            "--resolve",
+            "macro.example.com:8090:127.0.0.1",
+            "https://macro.example.com:8090/app/",
+        ]
+    );
+}
+
+#[test]
+fn curl_probe_leaves_other_urls_alone() {
+    let args = super::curl_probe_for("http://localhost:9000/", Some("macro.example.com"));
+    assert_eq!(args, ["http://localhost:9000/"]);
+}
