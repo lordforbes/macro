@@ -36,6 +36,9 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Install Nix
+        uses: ./.github/actions/setup-nix
+
       - name: Set up Nix dev shell and dependencies
         uses: ./.github/actions/setup-reqs-web
 
