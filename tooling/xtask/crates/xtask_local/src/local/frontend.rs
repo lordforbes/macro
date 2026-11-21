@@ -190,7 +190,11 @@ const LOCAL_STACK_ENV: &str = "VITE_LOCAL_STACK";
 fn static_build_command(mode: Mode) -> Command {
     let mut cmd = Command::new("bun");
     cmd.current_dir(app_dir())
-        .args(["run", "--bun", "build"])
+        // Self-hosted on CPUs without AVX2: run Vite under Node and use
+        // Rolldown's WebAssembly build; its native module needs AVX2 and
+        // Bun ignores NAPI_RS_FORCE_WASI.
+        .args(["run", "build"])
+        .env("NAPI_RS_FORCE_WASI", "true")
         .env("MODE", "development")
         .env("NODE_ENV", "production")
         .env("VITE_LOCAL_SERVERS", "ALL")
