@@ -60,8 +60,18 @@ const PUBLIC_HOST_ENV: &str = "MACRO_PUBLIC_HOST";
 /// curl arguments, ending with the URL, that request `url` on this proxy with
 /// the trust options its certificate needs.
 pub fn curl_probe(url: &str) -> Vec<String> {
-    let public_host = macro_env_var::maybe_read_env(PUBLIC_HOST_ENV);
-    curl_probe_for(url, public_host.as_deref().filter(|h| !h.is_empty()))
+    curl_probe_for(url, public_host().as_deref())
+}
+
+fn public_host() -> Option<String> {
+    macro_env_var::maybe_read_env(PUBLIC_HOST_ENV).filter(|h| !h.is_empty())
+}
+
+/// Self-hosting: the browser-facing origin when `MACRO_PUBLIC_HOST` is set.
+/// A static-frontend stack otherwise advertises `https://localhost:<port>`,
+/// which the auth service then enforces as the only allowed return origin.
+pub fn public_origin(instance: &Instance) -> Option<String> {
+    public_host().map(|host| format!("https://{host}:{}", instance.port(Port::Proxy)))
 }
 
 fn curl_probe_for(url: &str, public_host: Option<&str>) -> Vec<String> {

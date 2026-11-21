@@ -94,7 +94,7 @@ impl LocalEnv {
         };
         let public_origin = frontend::https_origin(instance)?;
         let frontend_origin = if static_frontend {
-            proxy::url(instance)
+            proxy::public_origin(instance).unwrap_or_else(|| proxy::url(instance))
         } else {
             public_origin.clone()
         };
