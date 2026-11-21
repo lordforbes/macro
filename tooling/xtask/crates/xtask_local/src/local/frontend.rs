@@ -223,7 +223,34 @@ fn static_build_command(mode: Mode) -> Command {
 ///
 /// Bundles are cached machine-wide by everything the build reads (see
 /// [`bundle_cache`]), so an unchanged frontend is staged without rebuilding.
+/// Self-hosting: a directory holding a web bundle built elsewhere, staged
+/// instead of building one. For hosts whose CPUs lack AVX2, which
+/// Rolldown's native module needs (see the selfhost-web-bundle workflow).
+const PREBUILT_BUNDLE_ENV: &str = "MACRO_PREBUILT_WEB_BUNDLE";
+
 pub fn build_static(stage: &Stage, instance: &Instance, mode: Mode) -> Result<()> {
+    if let Some(prebuilt) = macro_env_var::maybe_read_env(PREBUILT_BUNDLE_ENV) {
+        let prebuilt = PathBuf::from(prebuilt);
+        if !prebuilt.join("index.html").exists() {
+            anyhow::bail!(
+                "{PREBUILT_BUNDLE_ENV}={} has no index.html",
+                prebuilt.display()
+            );
+        }
+        stage.note(&format!(
+            "using prebuilt frontend bundle {}",
+            prebuilt.display()
+        ));
+        return stage.run_step("Staging frontend bundle", || {
+            let staged = static_dir(instance);
+            if staged.exists() {
+                std::fs::remove_dir_all(&staged)
+                    .with_context(|| format!("clearing {}", staged.display()))?;
+            }
+            instance.ensure_artifact_dir()?;
+            bundle_cache::copy_tree(&prebuilt, &staged)
+        });
+    }
     // Held through staging: `dist/` is shared until it's copied out.
     let _build_lock = lock_checkout_build(stage)?;
     prepare_dependencies(stage)?;
